@@ -1,5 +1,7 @@
 # Event Seating Planner
 
+**▶ Live app: https://tables-management-events.vercel.app/**
+
 A web app to plan and manage guest seating for events (weddings, dinners,
 conferences…). Drag guests onto seats, create rectangular or round tables,
 draw zones, and manage multiple layout scenarios across pages.
