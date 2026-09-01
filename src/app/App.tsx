@@ -833,7 +833,7 @@ function SidebarToggle({ label, side, open, onToggle, variant }: {
     <button onClick={onToggle} title={open ? `Hide ${label}` : `Show ${label}`}
       className={variant === "floating"
         ? "h-9 px-2.5 flex items-center gap-2 bg-white rounded-xl shadow-md border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-        : "flex items-center gap-1.5 text-gray-500 hover:text-gray-800 transition-colors min-w-0"}>
+        : "flex items-center gap-1.5 text-gray-800 hover:text-gray-900 transition-colors min-w-0"}>
       {iconFirst ? <>{icon}{text}</> : <>{text}{icon}</>}
     </button>
   );
