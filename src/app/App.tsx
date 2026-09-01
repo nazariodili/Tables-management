@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus } from "lucide-react";
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCcw, RotateCw } from "lucide-react";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
 // Figma. Ricreata inline perché non presente in questa versione di lucide. ──────
@@ -454,7 +454,7 @@ function TableCard({
   table, people, draggingId, dragOverKey, selected,
   onSeatDragOver, onSeatDrop, onPersonDragStart, onPersonDragEnd,
   onSeatClick, onGapDragOver, onGapDrop, onGapClick,
-  onAdjust, onRemoveSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH, onRotate,
+  onAdjust, onRemoveSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH,
   zoom, isSelected, onSelect, willFreeOnRelease, onTableAreaDragOver, onTableAreaDrop, tagColor,
 }: {
   table: TableData;
@@ -478,7 +478,6 @@ function TableCard({
   onStartTableDrag: (e: RMouseEvent<HTMLDivElement>) => void;
   onFlip: () => void;
   onFlipH: () => void;
-  onRotate: (deg: number) => void;
   zoom: number;
   isSelected: boolean;
   onSelect: () => void;
@@ -494,7 +493,7 @@ function TableCard({
   const isDragging = !!draggingId;
   const hasSelected = !!selected;
 
-  const renderSeat = (row: "top" | "bottom", personId: string | null, idx: number, dims?: { w: number; h: number }) => {
+  const renderSeat = (row: "top" | "bottom", personId: string | null, idx: number, dims?: { w: number; h: number }, counterDeg = 0) => {
     const person = personId ? people[personId] : null;
     const key = `${table.id}|${row}|${idx}`;
     const isOver = dragOverKey === key;
@@ -508,7 +507,7 @@ function TableCard({
       <div
         key={key}
         data-seat="1"
-        style={{ width: dims?.w ?? SEAT_W, height: dims?.h ?? SEAT_H, flexShrink: 0 }}
+        style={{ width: dims?.w ?? SEAT_W, height: dims?.h ?? SEAT_H, flexShrink: 0, transform: counterDeg ? `rotate(${counterDeg}deg)` : undefined }}
         className={[
           "relative rounded-lg transition-all duration-100 cursor-pointer select-none",
           person ? "" : "border-2 border-dashed",
@@ -582,38 +581,50 @@ function TableCard({
 
   const GAP_NORMAL = 8;  // px — layout width of each gap zone
 
-  const renderGap = (row: "top" | "bottom", afterIdx: number) => {
+  const renderGap = (row: "top" | "bottom", afterIdx: number, axis: "h" | "v" = "h") => {
     const key = `G|${table.id}|${row}|${afterIdx}`;
     const isOver = dragOverKey === key;
     const showInsert = isOver && isDragging;
     const showClickTarget = hasSelected && !isDragging;
+    const horiz = axis === "h";
 
     return (
       <div
         key={key}
-        style={{ width: GAP_NORMAL, height: SEAT_H, flexShrink: 0, position: "relative" }}
+        style={{ width: horiz ? GAP_NORMAL : SEAT_W, height: horiz ? SEAT_H : GAP_NORMAL, flexShrink: 0, position: "relative" }}
         className={showClickTarget ? "cursor-pointer" : ""}
         onDragOver={e => onGapDragOver(e, key)}
         onDrop={e => onGapDrop(e, table.id, row, afterIdx)}
         onClick={() => onGapClick(table.id, row, afterIdx)}
       >
         {/* Invisible wider hit area so the gap is easier to target */}
-        <div style={{ position: "absolute", inset: "0 -6px", zIndex: 5 }} />
+        <div style={{ position: "absolute", inset: horiz ? "0 -6px" : "-6px 0", zIndex: 5 }} />
         {/* Blue insert line */}
         {showInsert && (
-          <div style={{
+          <div style={horiz ? {
             position: "absolute", left: "50%", top: 2, bottom: 2,
             width: 3, transform: "translateX(-50%)",
             borderRadius: 4, zIndex: 20,
             background: "linear-gradient(180deg,#3b82f6,#6366f1)",
             boxShadow: "0 0 8px 2px rgba(99,102,241,0.5)",
+          } : {
+            position: "absolute", top: "50%", left: 2, right: 2,
+            height: 3, transform: "translateY(-50%)",
+            borderRadius: 4, zIndex: 20,
+            background: "linear-gradient(90deg,#3b82f6,#6366f1)",
+            boxShadow: "0 0 8px 2px rgba(99,102,241,0.5)",
           }} />
         )}
         {/* Click-to-insert line (softer) */}
         {showClickTarget && !showInsert && (
-          <div style={{
+          <div style={horiz ? {
             position: "absolute", left: "50%", top: 4, bottom: 4,
             width: 2, transform: "translateX(-50%)",
+            borderRadius: 4, zIndex: 10,
+            background: "rgba(59,130,246,0.25)",
+          } : {
+            position: "absolute", top: "50%", left: 4, right: 4,
+            height: 2, transform: "translateY(-50%)",
             borderRadius: 4, zIndex: 10,
             background: "rgba(59,130,246,0.25)",
           }} />
@@ -696,24 +707,18 @@ function TableCard({
   }
 
   const ROW_LABEL_W = 18;
-  const rot = table.rotation ?? 0;
-  const startRotate = (e: RMouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    e.preventDefault();
-    const cardEl = (e.currentTarget as HTMLElement).closest("[data-table-id]") as HTMLElement | null;
-    if (!cardEl) return;
-    const r = cardEl.getBoundingClientRect();
-    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    const move = (ev: globalThis.MouseEvent) => {
-      const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI;
-      let deg = ang - 90; // maniglia in basso: giù = 90° in atan2
-      if (ev.shiftKey) deg = Math.round(deg / 15) * 15;
-      onRotate(((deg % 360) + 360) % 360);
-    };
-    const up = () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
-  };
+  // Orientamento a scaloni di 90°. Per orizzontale (0/180) si usa il layout a
+  // righe; per verticale (90/270) il layout a colonne. Il residuo di 180° è
+  // applicato via CSS e ogni sedia/etichetta è contro-ruotata così i NOMI
+  // restano sempre orizzontali (nessuna sovrapposizione: 180° conserva l'ingombro).
+  const deg = (((table.rotation ?? 0) % 360) + 360) % 360;
+  const axisVertical = deg === 90 || deg === 270;
+  const extra = axisVertical ? deg - 90 : deg; // 0 | 180
+  const cDeg = -extra; // contro-rotazione dei contenuti
+
+  const rowLabel = (letter: string, vertical: boolean) => (
+    <div style={{ width: vertical ? SEAT_W : ROW_LABEL_W, height: vertical ? undefined : SEAT_H, marginBottom: vertical ? 4 : 0, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[11px] text-gray-400 font-bold">{letter}</div>
+  );
 
   return (
     <div
@@ -722,62 +727,71 @@ function TableCard({
       style={{ position: "absolute", left: table.x, top: table.y, zIndex: isSelected ? 2 : 1,
         border: `2px solid ${isSelected ? "#3b82f6" : "#e5e7eb"}`, cursor: "grab",
         boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-        transform: rot ? `rotate(${rot}deg)` : undefined, transformOrigin: "center center" }}
+        transform: extra ? `rotate(${extra}deg)` : undefined, transformOrigin: "center center" }}
       onMouseDown={e => { if (!(e.target as HTMLElement).closest("[data-seat]")) onStartTableDrag(e); }}
       onDragOver={e => { if (draggingId) onTableAreaDragOver(e); }}
       onDrop={onTableAreaDrop}
     >
       <div className="p-5">
-        <div style={{ display: "inline-block" }}>
-          {/* Top row (A) with gap zones */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ width: ROW_LABEL_W, height: SEAT_H, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} className="text-[11px] text-gray-400 font-bold">A</div>
-            {renderGap("top", 0)}
-            {table.topSeats.map((pid, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                {renderSeat("top", pid, i)}
-                {renderGap("top", i + 1)}
-              </div>
-            ))}
+        {axisVertical ? (
+          /* VERTICALE: due colonne (A / B), pill orizzontali impilati */
+          <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+            {(["top", "bottom"] as const).map(row => {
+              const seats = row === "top" ? table.topSeats : table.bottomSeats;
+              return (
+                <div key={row} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  {rowLabel(row === "top" ? "A" : "B", true)}
+                  {renderGap(row, 0, "v")}
+                  {seats.map((pid, i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      {renderSeat(row, pid, i, undefined, cDeg)}
+                      {renderGap(row, i + 1, "v")}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
+        ) : (
+          /* ORIZZONTALE: due righe (A / B) */
+          <div style={{ display: "inline-block" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              {rowLabel("A", false)}
+              {renderGap("top", 0)}
+              {table.topSeats.map((pid, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                  {renderSeat("top", pid, i, undefined, cDeg)}
+                  {renderGap("top", i + 1)}
+                </div>
+              ))}
+            </div>
 
-          {/* Table divider */}
-          <div className="relative my-4">
-          </div>
+            <div className="relative my-4" />
 
-          {/* Bottom row (B) with gap zones */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ width: ROW_LABEL_W, height: SEAT_H, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} className="text-[11px] text-gray-400 font-bold">B</div>
-            {renderGap("bottom", 0)}
-            {table.bottomSeats.map((pid, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                {renderSeat("bottom", pid, i)}
-                {renderGap("bottom", i + 1)}
-              </div>
-            ))}
-          </div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              {rowLabel("B", false)}
+              {renderGap("bottom", 0)}
+              {table.bottomSeats.map((pid, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                  {renderSeat("bottom", pid, i, undefined, cDeg)}
+                  {renderGap("bottom", i + 1)}
+                </div>
+              ))}
+            </div>
 
-          {/* Seat numbers — aligned under each seat */}
-          <div style={{ display: "flex", marginTop: 6 }}>
-            <div style={{ width: ROW_LABEL_W + GAP_NORMAL, flexShrink: 0 }} />
-            {Array.from({ length: maxCols }).map((_, i) => (
-              <div key={i} style={{ display: "flex" }}>
-                <div style={{ width: SEAT_W, flexShrink: 0 }} className="text-center text-[10px] text-gray-300 font-medium">{i + 1}</div>
-                <div style={{ width: GAP_NORMAL, flexShrink: 0 }} />
-              </div>
-            ))}
+            {/* Numeri posti — allineati sotto ogni sedia */}
+            <div style={{ display: "flex", marginTop: 6 }}>
+              <div style={{ width: ROW_LABEL_W + GAP_NORMAL, flexShrink: 0 }} />
+              {Array.from({ length: maxCols }).map((_, i) => (
+                <div key={i} style={{ display: "flex" }}>
+                  <div style={{ width: SEAT_W, flexShrink: 0, transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-center text-[10px] text-gray-300 font-medium">{i + 1}</div>
+                  <div style={{ width: GAP_NORMAL, flexShrink: 0 }} />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
-
-      {/* Maniglia di rotazione (solo se selezionato) */}
-      {isSelected && (
-        <div style={{ position: "absolute", left: "50%", top: "100%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", pointerEvents: "none" }}>
-          <div style={{ width: 2, height: 22, background: "#3b82f6" }} />
-          <div onMouseDown={startRotate} title="Drag to rotate"
-            style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", border: "2px solid #3b82f6", cursor: "grab", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.2)" }} />
-        </div>
-      )}
     </div>
   );
 }
@@ -787,7 +801,7 @@ function TableCard({
 
 function TableChrome({
   table, occupied, total, zoom, isSelected,
-  onSelect, onStartTableDrag, onRename, onAdjust, onFlip, onFlipH, onDelete,
+  onSelect, onStartTableDrag, onRename, onAdjust, onFlip, onFlipH, onRotate, onDelete,
 }: {
   table: TableData;
   occupied: number;
@@ -800,15 +814,34 @@ function TableChrome({
   onAdjust: (tableId: string, row: "top" | "bottom", delta: number) => void;
   onFlip: () => void;
   onFlipH: () => void;
+  onRotate: (deg: number) => void;
   onDelete: () => void;
 }) {
   const isRound = table.shape === "round";
+  const deg = (((table.rotation ?? 0) % 360) + 360) % 360;
+  // Misura l'ingombro (non ruotato) del frame per ancorare il titolo al centro
+  // del tavolo e farlo "seguire" la rotazione.
+  const [dim, setDim] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = document.querySelector(`[data-table-id="${table.id}"]`) as HTMLElement | null;
+    if (el) {
+      const w = el.offsetWidth, h = el.offsetHeight;
+      setDim(prev => (prev.w === w && prev.h === h) ? prev : { w, h });
+    }
+  }, [table.id, table.topSeats.length, table.bottomSeats.length, table.shape, table.rotation, zoom]);
+  const axisVertical = deg === 90 || deg === 270;
+  const extra = axisVertical ? deg - 90 : deg; // 0 | 180 (residuo applicato via CSS al frame)
+  const rotate90 = (dir: 1 | -1) => onRotate((((deg + dir * 90) % 360) + 360) % 360);
   return (
     <div style={{ position: "absolute", left: table.x, top: table.y }}>
+      {/* Layer di rotazione: ruota il titolo attorno al centro del frame così
+          da seguirlo; il contenuto viene contro-ruotato per restare leggibile. */}
+      <div style={{ position: "absolute", left: 0, top: 0, transformOrigin: `${dim.w / 2}px ${dim.h / 2}px`, transform: extra ? `rotate(${extra}deg)` : undefined }}>
       {/* Contro-scala per dimensione costante a ogni zoom; ancorato sopra il frame */}
       <div style={{ position: "absolute", left: 0, bottom: "100%", transformOrigin: "left bottom", transform: `scale(${1 / zoom})`, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, paddingBottom: 6, pointerEvents: "auto" }}>
         {isSelected && (
-          <div className="flex items-center gap-1.5 bg-white rounded-xl shadow-lg border border-gray-200 px-2 h-11" onMouseDown={e => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5 bg-white rounded-xl shadow-lg border border-gray-200 px-2 h-11" onMouseDown={e => e.stopPropagation()}
+            style={{ transform: extra ? `rotate(${-extra}deg)` : undefined }}>
             <span className="text-xs text-gray-400 font-medium px-1 tabular-nums">{occupied}/{total}</span>
             <div className="w-px h-5 bg-gray-200" />
             {isRound ? (
@@ -831,6 +864,11 @@ function TableChrome({
                 <div className="w-px h-5 bg-gray-200" />
                 <button onClick={onFlipH} title="Flip horizontal" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowLeftRight size={18} /></button>
                 <button onClick={onFlip} title="Flip vertical" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowUpDown size={18} /></button>
+                <div className="w-px h-5 bg-gray-200" />
+                {/* Rotazione a scaloni di 90° con gradi in diretta */}
+                <button onClick={() => rotate90(-1)} title="Rotate -90°" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><RotateCcw size={17} /></button>
+                <span className="text-xs font-semibold text-gray-500 tabular-nums w-8 text-center">{deg}°</span>
+                <button onClick={() => rotate90(1)} title="Rotate +90°" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><RotateCw size={17} /></button>
               </>
             )}
             <div className="w-px h-5 bg-gray-200" />
@@ -838,10 +876,11 @@ function TableChrome({
           </div>
         )}
         {/* Titolo: trascina + seleziona (rename su doppio click) */}
-        <div onMouseDown={onStartTableDrag} onClick={onSelect} style={{ cursor: "grab", maxWidth: 360, display: "flex", alignItems: "center", gap: 4 }}>
+        <div onMouseDown={onStartTableDrag} onClick={onSelect} style={{ cursor: "grab", maxWidth: 360, display: "flex", alignItems: "center", gap: 4, transform: extra ? `rotate(${-extra}deg)` : undefined }}>
           <GripVertical size={13} className="shrink-0" style={{ color: isSelected ? "#2563eb" : "#9ca3af" }} />
           <InlineEditText value={table.name} onCommit={onRename} trigger="dblclick" title="Double-click to rename" textStyle={{ fontSize: 13, fontWeight: 600, color: isSelected ? "#2563eb" : "#6b7280" }} />
         </div>
+      </div>
       </div>
     </div>
   );
@@ -1442,6 +1481,14 @@ export default function App() {
     setZoom(newZoom);
   }, [tables]);
 
+  // Alla prima apertura centra i tavoli nel canvas (una sola volta per sessione).
+  const didInitFit = useRef(false);
+  useEffect(() => {
+    if (!loaded || didInitFit.current) return;
+    didInitFit.current = true;
+    requestAnimationFrame(() => fitView());
+  }, [loaded, fitView]);
+
   // Add person form
   const [addPersonOpen, setAddPersonOpen] = useState(false);
   const [pName, setPName] = useState("");
@@ -1975,7 +2022,6 @@ export default function App() {
                 onRename={name => renameTable(table.id, name)}
                 onFlip={() => flipTable(table.id)}
                 onFlipH={() => flipTableH(table.id)}
-                onRotate={deg => rotateTable(table.id, deg)}
                 onStartTableDrag={e => handleStartTableDrag(e, table.id, table.x, table.y)}
                 zoom={zoom}
                 isSelected={selectedTableId === table.id}
@@ -2004,6 +2050,7 @@ export default function App() {
                   onAdjust={adjustSeats}
                   onFlip={() => flipTable(table.id)}
                   onFlipH={() => flipTableH(table.id)}
+                  onRotate={deg => rotateTable(table.id, deg)}
                   onDelete={() => deleteTable(table.id)}
                 />
               ))}
