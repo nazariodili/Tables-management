@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
 import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare } from "lucide-react";
+import { useT, useI18n, LANGS } from "./i18n";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
 // Figma. Ricreata inline perché non presente in questa versione di lucide. ──────
@@ -203,12 +204,13 @@ const normalizeStr = (s: string) =>
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const t = useT();
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-bold text-gray-900">{title}</h2>
-          <button onClick={onClose} title="Close" className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} title={t("close")} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -237,26 +239,27 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag,
   const [allergies, setAllergies] = useState(person.allergies ?? "");
   const [notes, setNotes] = useState(person.notes ?? "");
   const [managing, setManaging] = useState(false);
+  const t = useT();
 
   const toggle = (tag: string) =>
     setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   const save = () => name.trim() && onSave(name.trim(), color, tags, allergies.trim(), notes.trim());
 
   return (
-    <Modal title="Edit person" onClose={onClose}>
+    <Modal title={t("editPerson")} onClose={onClose}>
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Full name</label>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("fullName")}</label>
           <input autoFocus value={name} onChange={e => setName(e.target.value)}
             onKeyDown={e => e.key === "Enter" && save()}
             className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Color</label>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("color")}</label>
           <div className="mt-1.5 flex gap-2 flex-wrap">
             {COLORS.map(c => (
-              <button key={c} onClick={() => setColor(c)} title="Pick color"
+              <button key={c} onClick={() => setColor(c)} title={t("pickColor")}
                 className={["w-8 h-8 rounded-lg border-2 transition-all", color === c ? "border-gray-800 scale-110 shadow-md" : "border-transparent hover:scale-105"].join(" ")}
                 style={{ backgroundColor: c }}
               />
@@ -265,9 +268,9 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag,
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tags</label>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("tags")}</label>
             <button onClick={() => setManaging(v => !v)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
-              {managing ? "Done" : "Manage tags"}
+              {managing ? t("done") : t("manageTags")}
             </button>
           </div>
           {managing ? (
@@ -276,12 +279,12 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag,
             </div>
           ) : (
             <div className="mt-1.5 flex gap-2 flex-wrap">
-              {tagDefs.length === 0 && <span className="text-xs text-gray-400">No tags yet — click "Manage tags".</span>}
+              {tagDefs.length === 0 && <span className="text-xs text-gray-400">{t("noTagsHint")}</span>}
               {tagDefs.map(({ name, color }) => {
                 const active = tags.includes(name);
                 return (
                   <button key={name} onClick={() => toggle(name)}
-                    title={active ? `Remove "${name}" tag` : `Add "${name}" tag`}
+                    title={active ? t("removeTagTip", { name }) : t("addTagTip", { name })}
                     className={[
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
                       active ? "text-white border-transparent shadow-sm" : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300",
@@ -297,30 +300,30 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag,
           )}
         </div>
         <div>
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Allergies</label>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("allergies")}</label>
           <input value={allergies} onChange={e => setAllergies(e.target.value)}
-            placeholder="e.g. nuts, gluten, lactose"
+            placeholder={t("allergiesPh")}
             className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Notes</label>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("notes")}</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-            placeholder="Any note about this guest…"
+            placeholder={t("notesPh")}
             className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 resize-y"
           />
         </div>
         <div className="flex items-center gap-2 pt-1">
           <button onClick={onDelete} className="px-4 py-2.5 rounded-xl border border-red-200 text-sm text-red-500 hover:bg-red-50 font-medium transition-colors">
-            Delete
+            {t("delete")}
           </button>
           <div className="flex-1" />
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">
-            Cancel
+            {t("cancel")}
           </button>
           <button onClick={save} disabled={!name.trim()}
             className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40">
-            Save
+            {t("save")}
           </button>
         </div>
       </div>
@@ -338,25 +341,26 @@ function TagEditorList({ tagDefs, onAdd, onRename, onColor, onDelete }: {
   onDelete: (name: string) => void;
 }) {
   const [newName, setNewName] = useState("");
+  const t = useT();
   const add = () => { if (newName.trim()) { onAdd(newName); setNewName(""); } };
   return (
     <div className="space-y-3">
-      {tagDefs.length === 0 && <p className="text-xs text-gray-400">No tags yet. Add one below.</p>}
+      {tagDefs.length === 0 && <p className="text-xs text-gray-400">{t("noTagsAdd")}</p>}
       <div className="space-y-2 max-h-56 overflow-y-auto">
-        {tagDefs.map(t => (
-          <div key={t.name} className="flex items-center gap-2">
+        {tagDefs.map(td => (
+          <div key={td.name} className="flex items-center gap-2">
             <div className="flex items-center gap-1 shrink-0">
               {TAG_PALETTE.map(c => (
-                <button key={c} onClick={() => onColor(t.name, c)} title="Color"
+                <button key={c} onClick={() => onColor(td.name, c)} title={t("color")}
                   className="w-5 h-5 rounded-full border-2 box-border transition-opacity hover:opacity-70"
-                  style={{ backgroundColor: c, borderColor: t.color === c ? "#111827" : "transparent" }} />
+                  style={{ backgroundColor: c, borderColor: td.color === c ? "#111827" : "transparent" }} />
               ))}
             </div>
-            <input defaultValue={t.name} key={t.name + t.color}
-              onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) onRename(t.name, v); }}
+            <input defaultValue={td.name} key={td.name + td.color}
+              onBlur={e => { const v = e.target.value.trim(); if (v && v !== td.name) onRename(td.name, v); }}
               onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
               className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-            <button onClick={() => onDelete(t.name)} title="Delete tag"
+            <button onClick={() => onDelete(td.name)} title={t("deleteTag")}
               className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
               <Trash2 size={14} />
             </button>
@@ -366,11 +370,11 @@ function TagEditorList({ tagDefs, onAdd, onRename, onColor, onDelete }: {
       <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
         <input value={newName} onChange={e => setNewName(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") add(); }}
-          placeholder="New tag name"
+          placeholder={t("newTagName")}
           className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50" />
         <button onClick={add} disabled={!newName.trim()}
           className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 flex items-center gap-1 shrink-0">
-          <Plus size={14} /> Add
+          <Plus size={14} /> {t("add")}
         </button>
       </div>
     </div>
@@ -387,8 +391,9 @@ function ManageTagsModal({ tagDefs, onAdd, onRename, onColor, onDelete, onClose 
   onDelete: (name: string) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
-    <Modal title="Manage tags" onClose={onClose}>
+    <Modal title={t("manageTags")} onClose={onClose}>
       <TagEditorList tagDefs={tagDefs} onAdd={onAdd} onRename={onRename} onColor={onColor} onDelete={onDelete} />
     </Modal>
   );
@@ -537,6 +542,7 @@ function TableCard({
   onTableAreaDrop: (e: DragEvent<HTMLDivElement>) => void;
   tagColor: (name: string) => string;
 }) {
+  const t = useT();
   const occupied = [...table.topSeats, ...table.bottomSeats].filter(Boolean).length;
   const total = table.topSeats.length + table.bottomSeats.length;
   const maxCols = Math.max(table.topSeats.length, table.bottomSeats.length);
@@ -586,7 +592,7 @@ function TableCard({
             onDragStart={e => onPersonDragStart(e, person.id, { type: "seat", tableId: table.id, row, idx })}
             onDragEnd={onPersonDragEnd}
             onClick={e => { e.stopPropagation(); onPersonClick(person.id); }}
-            title={`${person.name} — click to edit, drag to move`}
+            title={t("chipEditMove", { name: person.name })}
             style={{ backgroundColor: person.color }}
             className={[
               "absolute inset-0 rounded-lg flex flex-col items-center justify-center px-1.5 overflow-hidden",
@@ -618,7 +624,7 @@ function TableCard({
             <button
               onClick={e => { e.stopPropagation(); onRemoveSlot(table.id, row, idx); }}
               className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/empty:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-              title="Remove slot"
+              title={t("removeSlot")}
             >
               <X size={13} />
             </button>
@@ -661,7 +667,7 @@ function TableCard({
             <button
               onMouseDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onInsertSlot(table.id, row, afterIdx); }}
-              title="Add an empty seat here"
+              title={t("addEmptySeat")}
               style={{ position: "relative", zIndex: 2, pointerEvents: "auto", width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
               <Plus size={12} style={{ flexShrink: 0 }} />
             </button>
@@ -777,7 +783,7 @@ function TableCard({
                   <button
                     onMouseDown={e => e.stopPropagation()}
                     onClick={e => { e.stopPropagation(); onInsertSlot(table.id, "top", afterIdx); }}
-                    title="Add an empty seat here"
+                    title={t("addEmptySeat")}
                     className="opacity-0 group-hover/gap:opacity-100 transition-opacity"
                     style={{ position: "relative", zIndex: 2, width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
                     <Plus size={12} style={{ flexShrink: 0 }} />
@@ -919,6 +925,7 @@ function TableChrome({
   onRotate: (deg: number) => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   const isRound = table.shape === "round";
   const deg = (((table.rotation ?? 0) % 360) + 360) % 360;
   // Misura l'ingombro (non ruotato) del frame per ancorare il titolo al centro
@@ -943,44 +950,44 @@ function TableChrome({
         {isSelected && (
           <div className="flex items-center gap-1.5 bg-white rounded-xl shadow-lg border border-gray-200 px-2 h-11" onMouseDown={e => e.stopPropagation()}
             style={{ transform: extra ? `rotate(${-extra}deg)` : undefined }}>
-            <span title="Occupied / total seats" className="text-xs text-gray-400 font-medium px-1 tabular-nums">{occupied}/{total}</span>
+            <span title={t("occupiedTotal")} className="text-xs text-gray-400 font-medium px-1 tabular-nums">{occupied}/{total}</span>
             <div className="w-px h-5 bg-gray-200" />
             {isRound ? (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-400 font-semibold px-1">Seats</span>
-                <button onClick={() => onAdjust(table.id, "top", -1)} title="Remove a seat" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
-                <span title="Number of seats" className="w-5 text-center text-sm font-bold text-gray-700">{table.topSeats.length}</span>
-                <button onClick={() => onAdjust(table.id, "top", 1)} title="Add a seat" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
+                <span className="text-xs text-gray-400 font-semibold px-1">{t("seats")}</span>
+                <button onClick={() => onAdjust(table.id, "top", -1)} title={t("removeSeat")} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
+                <span title={t("numberOfSeats")} className="w-5 text-center text-sm font-bold text-gray-700">{table.topSeats.length}</span>
+                <button onClick={() => onAdjust(table.id, "top", 1)} title={t("addSeat")} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
               </div>
             ) : (
               <>
                 {(["top", "bottom"] as const).map(row => (
                   <div key={row} className="flex items-center gap-1">
-                    <span title={`Row ${row === "top" ? "A" : "B"}`} className="text-xs text-gray-400 font-semibold w-3 text-center">{row === "top" ? "A" : "B"}</span>
-                    <button onClick={() => onAdjust(table.id, row, -1)} title={`Remove a seat from row ${row === "top" ? "A" : "B"}`} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
-                    <span title={`Seats in row ${row === "top" ? "A" : "B"}`} className="w-5 text-center text-sm font-bold text-gray-700">{row === "top" ? table.topSeats.length : table.bottomSeats.length}</span>
-                    <button onClick={() => onAdjust(table.id, row, 1)} title={`Add a seat to row ${row === "top" ? "A" : "B"}`} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
+                    <span title={t("rowLabel", { r: row === "top" ? "A" : "B" })} className="text-xs text-gray-400 font-semibold w-3 text-center">{row === "top" ? "A" : "B"}</span>
+                    <button onClick={() => onAdjust(table.id, row, -1)} title={t("removeSeatRow", { r: row === "top" ? "A" : "B" })} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
+                    <span title={t("seatsInRow", { r: row === "top" ? "A" : "B" })} className="w-5 text-center text-sm font-bold text-gray-700">{row === "top" ? table.topSeats.length : table.bottomSeats.length}</span>
+                    <button onClick={() => onAdjust(table.id, row, 1)} title={t("addSeatRow", { r: row === "top" ? "A" : "B" })} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
                   </div>
                 ))}
                 <div className="w-px h-5 bg-gray-200" />
-                <button onClick={onFlipH} title="Flip horizontal" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowLeftRight size={18} /></button>
-                <button onClick={onFlip} title="Flip vertical" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowUpDown size={18} /></button>
+                <button onClick={onFlipH} title={t("flipH")} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowLeftRight size={18} /></button>
+                <button onClick={onFlip} title={t("flipV")} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowUpDown size={18} /></button>
                 <div className="w-px h-5 bg-gray-200" />
                 {/* Rotazione: unico pulsante che alterna orizzontale (0°) / verticale (90°) */}
-                <button onClick={() => onRotate(deg === 90 ? 0 : 90)} title={deg === 90 ? "Make horizontal" : "Make vertical"}
+                <button onClick={() => onRotate(deg === 90 ? 0 : 90)} title={deg === 90 ? t("makeHorizontal") : t("makeVertical")}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
                   {deg === 90 ? <RotateCcwSquare size={17} /> : <RotateCwSquare size={17} />}
                 </button>
               </>
             )}
             <div className="w-px h-5 bg-gray-200" />
-            <button onClick={onDelete} title="Delete table" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={18} /></button>
+            <button onClick={onDelete} title={t("deleteTable")} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={18} /></button>
           </div>
         )}
         {/* Titolo: trascina + seleziona (rename su doppio click) */}
         <div onMouseDown={onStartTableDrag} onClick={onSelect} style={{ cursor: "grab", maxWidth: 360, display: "flex", alignItems: "center", gap: 4, transform: extra ? `rotate(${-extra}deg)` : undefined }}>
           <GripVertical size={13} className="shrink-0" style={{ color: isSelected ? "#2563eb" : "#9ca3af" }} />
-          <InlineEditText value={table.name} onCommit={onRename} trigger="dblclick" title="Double-click to rename" textStyle={{ fontSize: 13, fontWeight: 600, color: isSelected ? "#2563eb" : "#6b7280" }} />
+          <InlineEditText value={table.name} onCommit={onRename} trigger="dblclick" title={t("dblRename")} textStyle={{ fontSize: 13, fontWeight: 600, color: isSelected ? "#2563eb" : "#6b7280" }} />
         </div>
       </div>
       </div>
@@ -995,6 +1002,7 @@ function PageItem({ page, isActive, onSwitch, onRename, onContextMenu }: {
   onSwitch: () => void; onRename: (name: string) => void;
   onContextMenu: (x: number, y: number) => void;
 }) {
+  const t = useT();
   return (
     <div
       onClick={onSwitch}
@@ -1010,7 +1018,7 @@ function PageItem({ page, isActive, onSwitch, onRename, onContextMenu }: {
           onCommit={onRename}
           trigger="dblclick"
           grow
-          title="Double-click to rename · right-click for options"
+          title={t("dblRename")}
           textStyle={{ fontSize: 12, fontWeight: 500, color: "inherit" }}
         />
       </div>
@@ -1028,6 +1036,7 @@ function SidebarToggle({ label, side, open, onToggle, variant }: {
   onToggle: () => void;
   variant: "header" | "floating";
 }) {
+  const t = useT();
   const Icon = side === "left" ? PanelLeft : PanelRight;
   const icon = <Icon size={variant === "floating" ? 19 : 19} className="shrink-0" />;
   const text = (
@@ -1037,7 +1046,7 @@ function SidebarToggle({ label, side, open, onToggle, variant }: {
   );
   const iconFirst = variant === "header" ? true : side === "left";
   return (
-    <button onClick={onToggle} title={open ? `Hide ${label}` : `Show ${label}`}
+    <button onClick={onToggle} title={open ? t("hide", { label }) : t("show", { label })}
       className={variant === "floating"
         ? "h-11 px-4 flex items-center gap-2.5 bg-white rounded-xl shadow-md border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
         : "flex items-center gap-3.5 text-gray-800 hover:text-gray-900 transition-colors min-w-0"}>
@@ -1056,6 +1065,7 @@ const STORAGE_KEY = "tavoli_state_v1";
 type ListFilter = "all" | "free" | "assigned" | `tag:${string}`;
 
 export default function App() {
+  const { t, lang, setLang } = useI18n();
   // ── State ──────────────────────────────────────────────────────────────────
   // Persistenza su API locale SQLite (server.js): lo stato iniziale usa i
   // default seed, poi viene idratato da GET /api/state al mount.
@@ -1219,13 +1229,13 @@ export default function App() {
       try {
         const st = JSON.parse(String(reader.result)) as { pages?: Page[]; people?: Record<string, Person>; currentPageId?: string; tags?: TagDef[] };
         if (!Array.isArray(st.pages) || st.pages.length === 0) throw new Error("bad");
-        if (!window.confirm("Importing this file will replace your current data. Continue?")) return;
+        if (!window.confirm(t("importConfirm"))) return;
         const cur = st.currentPageId && st.pages.some(p => p.id === st.currentPageId) ? st.currentPageId : st.pages[0].id;
         const ppl = st.people ?? {};
         setPages(st.pages); setCurrentPageId(cur); setPeople(ppl);
         if (Array.isArray(st.tags)) setTagDefs(st.tags);
         bumpUidPast(collectIds(st.pages, ppl));
-      } catch { window.alert("Invalid file: could not import."); }
+      } catch { window.alert(t("importError")); }
     };
     reader.readAsText(file);
   };
@@ -1379,7 +1389,7 @@ export default function App() {
   // Larghezze regolabili (entro range min/max)
   const PAGES_MIN = 150, PAGES_MAX = 320;
   const GUESTS_MIN = 260, GUESTS_MAX = 520;
-  const PAGES_LABEL = "Pages", GUESTS_LABEL = "Guests";
+  const PAGES_LABEL = t("pages"), GUESTS_LABEL = t("guests");
   // Larghezza compatta (stato chiuso) — esplicita così la transizione anima
   const PAGES_CLOSED_W = 116, GUESTS_CLOSED_W = 226;
   const [pagesWidth, setPagesWidth] = useState(176);
@@ -1620,6 +1630,8 @@ export default function App() {
   // Add table form
   const [addTableOpen, setAddTableOpen] = useState(false);
   const [tableMenuOpen, setTableMenuOpen] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const curLang = LANGS.find(l => l.code === lang) ?? LANGS[0];
   const [tName, setTName] = useState("Table 2");
   const [tTop, setTTop] = useState(8);
   const [tBot, setTBot] = useState(8);
@@ -2050,7 +2062,7 @@ export default function App() {
           <div className={["flex items-center shrink-0 gap-2 justify-between px-3.5 py-3", pagesOpen ? "border-b border-gray-100" : ""].join(" ")}>
             <SidebarToggle label={PAGES_LABEL} side="left" open={pagesOpen} onToggle={() => setPagesOpen(v => !v)} variant="header" />
             {pagesOpen && (
-              <button onClick={addPage} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors shrink-0" title="New page">
+              <button onClick={addPage} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors shrink-0" title={t("newPage")}>
                 <Plus size={14} />
               </button>
             )}
@@ -2072,7 +2084,7 @@ export default function App() {
           {pagesOpen && (
             <div onMouseDown={e => startResize("pages", e)}
               className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-blue-400/40 transition-colors"
-              title="Drag to resize" />
+              title={t("dragResize")} />
           )}
         </aside>
 
@@ -2223,19 +2235,19 @@ export default function App() {
                   onMouseDown={e => e.stopPropagation()}>
                   {SHAPE_PALETTE.map(c => (
                     <button key={c} onClick={e => { e.stopPropagation(); updateShape(shape.id, { color: c }); setActiveShapeColor(c); }}
-                      title="Change color"
+                      title={t("changeColor")}
                       style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: shape.color === c ? "2px solid #111" : "2px solid #fff", boxShadow: shape.color === c ? "0 0 0 1.5px #111" : "0 0 0 1px #e5e7eb", cursor: "pointer", flexShrink: 0, padding: 0 }} />
                   ))}
                   <div style={{ width: 1, height: 24, background: "#e5e7eb", margin: "0 2px" }} />
                   {/* Dimensione testo — select con 4 taglie definite */}
                   <select value={ZONE_TEXT_SIZES.some(s => s.value === (shape.fontSize ?? 14)) ? (shape.fontSize ?? 14) : 14}
                     onChange={e => { e.stopPropagation(); updateShape(shape.id, { fontSize: Number(e.target.value) }); }}
-                    onMouseDown={e => e.stopPropagation()} title="Text size"
+                    onMouseDown={e => e.stopPropagation()} title={t("textSize")}
                     style={{ height: 32, borderRadius: 9, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 14, fontWeight: 600, padding: "0 8px", cursor: "pointer" }}>
                     {ZONE_TEXT_SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                   <div style={{ width: 1, height: 24, background: "#e5e7eb", margin: "0 2px" }} />
-                  <button onClick={e => { e.stopPropagation(); deleteShape(shape.id); }} title="Delete zone"
+                  <button onClick={e => { e.stopPropagation(); deleteShape(shape.id); }} title={t("deleteZone")}
                     style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 8, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>
                     <Trash2 size={19} />
                   </button>
@@ -2275,7 +2287,7 @@ export default function App() {
             <div className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-gray-200 px-2.5 h-16">
               {/* Add table — menu tipo (rettangolare / rotondo) */}
               <div className="relative">
-                <button onClick={() => toolAction(tableMenuOpen, () => setTableMenuOpen(v => !v))} title="Add table"
+                <button onClick={() => toolAction(tableMenuOpen, () => setTableMenuOpen(v => !v))} title={t("addTable")}
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     tableMenuOpen ? "bg-blue-100 text-blue-700" : "text-blue-600 hover:bg-blue-50"].join(" ")}>
                   <SquarePlus size={24} />
@@ -2286,24 +2298,24 @@ export default function App() {
                     <div className="absolute bottom-full mb-2 left-0 z-50 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[190px]">
                       <button onClick={() => { createTable("rect"); setTableMenuOpen(false); }}
                         className="w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                        <RectangleHorizontal size={16} className="text-blue-500" /> Rectangular table
+                        <RectangleHorizontal size={16} className="text-blue-500" /> {t("rectTable")}
                       </button>
                       <button onClick={() => { createTable("round"); setTableMenuOpen(false); }}
                         className="w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                        <Circle size={16} className="text-blue-500" /> Round table
+                        <Circle size={16} className="text-blue-500" /> {t("roundTable")}
                       </button>
                     </div>
                   </>
                 )}
               </div>
               {/* Add person */}
-              <button onClick={() => toolAction(false, () => setAddPersonOpen(true))} title="Add person"
+              <button onClick={() => toolAction(false, () => setAddPersonOpen(true))} title={t("addPerson")}
                 className="w-12 h-12 flex items-center justify-center rounded-xl text-violet-600 hover:bg-violet-50 transition-colors">
                 <UserPlus size={24} />
               </button>
               {/* Zone (disegno forme) */}
               <div className="relative">
-                <button onClick={() => toolAction(shapeMode, () => { setShapeMode(v => !v); setSelectedShapeId(null); setEditingShapeId(null); })} title="Draw zones"
+                <button onClick={() => toolAction(shapeMode, () => { setShapeMode(v => !v); setSelectedShapeId(null); setEditingShapeId(null); })} title={t("drawZones")}
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     shapeMode ? "bg-amber-500 text-white" : "text-amber-600 hover:bg-amber-50",
                   ].join(" ")}>
@@ -2312,7 +2324,7 @@ export default function App() {
                 {shapeMode && (
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-2.5 py-2">
                     {SHAPE_PALETTE.map(c => (
-                      <button key={c} onClick={() => setActiveShapeColor(c)} title="Zone color"
+                      <button key={c} onClick={() => setActiveShapeColor(c)} title={t("zoneColor")}
                         style={{ backgroundColor: c, width: 18, height: 18, borderRadius: "50%", border: activeShapeColor === c ? "2px solid #111" : "2px solid transparent", flexShrink: 0 }} />
                     ))}
                   </div>
@@ -2323,19 +2335,19 @@ export default function App() {
 
               {/* Zoom */}
               <button onClick={() => { const nz = Math.max(zoom / 1.3, 0.08); const vp = viewportRef.current; if (!vp) return; const cx = vp.clientWidth/2; const cy = vp.clientHeight/2; const cxc = (cx - panX) / zoom; const cyc = (cy - panY) / zoom; setPanX(cx - cxc*nz); setPanY(cy - cyc*nz); setZoom(nz); }}
-                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title="Zoom out">
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title={t("zoomOut")}>
                 <ZoomOut size={21} />
               </button>
               <button onClick={() => { setZoom(1); setPanX(60); setPanY(60); }}
-                className="px-1.5 text-sm font-mono font-semibold text-gray-600 hover:text-gray-900 min-w-[3.25rem] text-center transition-colors" title="Reset zoom">
+                className="px-1.5 text-sm font-mono font-semibold text-gray-600 hover:text-gray-900 min-w-[3.25rem] text-center transition-colors" title={t("resetZoom")}>
                 {Math.round(zoom * 100)}%
               </button>
               <button onClick={() => { const nz = Math.min(zoom * 1.3, 4); const vp = viewportRef.current; if (!vp) return; const cx = vp.clientWidth/2; const cy = vp.clientHeight/2; const cxc = (cx - panX) / zoom; const cyc = (cy - panY) / zoom; setPanX(cx - cxc*nz); setPanY(cy - cyc*nz); setZoom(nz); }}
-                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title="Zoom in">
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title={t("zoomIn")}>
                 <ZoomIn size={21} />
               </button>
               <button onClick={fitView}
-                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title="Fit to screen">
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title={t("fitScreen")}>
                 <Maximize2 size={20} />
               </button>
 
@@ -2344,11 +2356,11 @@ export default function App() {
               {/* Import / Export JSON */}
               <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) importData(f); e.target.value = ""; }} />
-              <button onClick={() => toolAction(false, () => fileInputRef.current?.click())} title="Import (JSON)"
+              <button onClick={() => toolAction(false, () => fileInputRef.current?.click())} title={t("importJson")}
                 className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
                 <Upload size={21} />
               </button>
-              <button onClick={() => toolAction(false, exportData)} title="Export (JSON)"
+              <button onClick={() => toolAction(false, exportData)} title={t("exportJson")}
                 className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
                 <Download size={21} />
               </button>
@@ -2358,14 +2370,39 @@ export default function App() {
               {/* Stato salvataggio (cloud) */}
               <div className="w-12 h-12 flex items-center justify-center"
                 title={
-                  saveStatus === "saving" ? "Saving…" :
-                  saveStatus === "error"  ? "Save error" : "Saved"
+                  saveStatus === "saving" ? t("saving") :
+                  saveStatus === "error"  ? t("saveError") : t("saved")
                 }>
                 {saveStatus === "error"
                   ? <CloudOff size={23} className="text-red-500" />
                   : <Cloud size={23} className={
                       saveStatus === "saving" ? "text-gray-400 animate-pulse" : "text-green-500"
                     } />}
+              </div>
+
+              <div className="w-px h-7 bg-gray-200 mx-1.5" />
+
+              {/* Selettore lingua con bandiera */}
+              <div className="relative">
+                <button onClick={() => setLangMenuOpen(v => !v)} title={t("language")}
+                  className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors text-xl leading-none",
+                    langMenuOpen ? "bg-gray-100" : "hover:bg-gray-100"].join(" ")}>
+                  <span aria-hidden>{curLang.flag}</span>
+                </button>
+                {langMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setLangMenuOpen(false)} />
+                    <div className="absolute bottom-full mb-2 right-0 z-50 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[168px]">
+                      {LANGS.map(l => (
+                        <button key={l.code} onClick={() => { setLang(l.code); setLangMenuOpen(false); }}
+                          className={["w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm hover:bg-gray-100 transition-colors",
+                            l.code === lang ? "text-blue-600 font-semibold" : "text-gray-700"].join(" ")}>
+                          <span className="text-lg leading-none" aria-hidden>{l.flag}</span> {l.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -2398,9 +2435,9 @@ export default function App() {
             <div className="flex items-center justify-between gap-2">
               <SidebarToggle label={`${GUESTS_LABEL} (${totalPeople})`} side="right" open={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} variant="header" />
               {sidebarOpen && (
-                <button onClick={e => { e.stopPropagation(); setAddPersonOpen(true); }} title="Add guest"
+                <button onClick={e => { e.stopPropagation(); setAddPersonOpen(true); }} title={t("addGuest")}
                   className="h-7 pl-2 pr-2.5 flex items-center gap-1.5 rounded-lg bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 transition-colors shrink-0">
-                  <UserPlus size={15} /> Add
+                  <UserPlus size={15} /> {t("add")}
                 </button>
               )}
             </div>
@@ -2411,11 +2448,11 @@ export default function App() {
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search guest..."
+                placeholder={t("searchGuest")}
                 className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white"
               />
               {search && (
-                <button onClick={() => setSearch("")} title="Clear search" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setSearch("")} title={t("clearSearch")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   <X size={12} />
                 </button>
               )}
@@ -2424,13 +2461,13 @@ export default function App() {
             {/* Filter tabs */}
             {sidebarOpen && <div className="flex gap-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
               {([
-                { f: "all",      label: "All",        icon: Users,         count: totalPeople },
-                { f: "free",     label: "Unassigned", icon: CircleDashed,  count: totalPeople - totalAssigned },
-                { f: "assigned", label: "Assigned",    icon: UserCheck,     count: totalAssigned },
+                { f: "all",      label: t("all"),        icon: Users,         count: totalPeople },
+                { f: "free",     label: t("unassigned"), icon: CircleDashed,  count: totalPeople - totalAssigned },
+                { f: "assigned", label: t("assigned"),   icon: UserCheck,     count: totalAssigned },
               ] as const).map(({ f, label, icon: Icon, count }) => {
                 const isActive = filter === f;
                 return (
-                  <button key={f} onClick={() => setFilter(f)} title={`Show ${label.toLowerCase()} guests`}
+                  <button key={f} onClick={() => setFilter(f)} title={t("showGuests", { label: label.toLowerCase() })}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
                     style={isActive
                       ? { backgroundColor: "#1f2937", color: "#fff" }
@@ -2452,7 +2489,7 @@ export default function App() {
                   return (
                     <button key={name}
                       onClick={() => setFilter(isActive ? "all" : `tag:${name}`)}
-                      title={isActive ? "Clear tag filter" : `Filter by "${name}"`}
+                      title={isActive ? t("clearTagFilter") : t("filterBy", { name })}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
                       style={isActive ? { backgroundColor: color, color: "#fff" } : { backgroundColor: color + "22", color }}>
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />
@@ -2461,9 +2498,9 @@ export default function App() {
                     </button>
                   );
                 })}
-                <button onClick={() => setTagsModalOpen(true)} title="Manage tags"
+                <button onClick={() => setTagsModalOpen(true)} title={t("manageTags")}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-                  <TagsIcon size={13} /> Manage
+                  <TagsIcon size={13} /> {t("manage")}
                 </button>
               </div>
             )}
@@ -2476,14 +2513,14 @@ export default function App() {
                 <Users size={24} className="mb-2 text-gray-300" />
                 {Object.keys(people).length === 0 ? (
                   <>
-                    <p className="text-xs text-gray-400 mb-3">Your guest list is empty.</p>
+                    <p className="text-xs text-gray-400 mb-3">{t("listEmpty")}</p>
                     <button onClick={() => setAddPersonOpen(true)}
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 transition-colors shadow-sm">
-                      <UserPlus size={14} /> Add your first guest
+                      <UserPlus size={14} /> {t("addFirstGuest")}
                     </button>
                   </>
                 ) : (
-                  <p className="text-xs text-gray-300">{search ? "No matches" : "No guests"}</p>
+                  <p className="text-xs text-gray-300">{search ? t("noMatches") : t("noGuests")}</p>
                 )}
               </div>
             ) : (
@@ -2500,7 +2537,7 @@ export default function App() {
                       onDragStart={e => { e.stopPropagation(); onListDragStart(e, person.id); }}
                       onDragEnd={onPersonDragEnd}
                       onClick={e => { e.stopPropagation(); onListPersonClick(person.id); }}
-                      title={`${person.name} — click to edit, drag onto a seat`}
+                      title={t("chipEditSeat", { name: person.name })}
                       className={[
                         "flex items-center gap-2.5 px-3 py-2 cursor-grab active:cursor-grabbing",
                         "transition-all duration-75 select-none group border-b border-gray-50 last:border-0",
@@ -2539,7 +2576,7 @@ export default function App() {
                       ) : (
                         <button
                           onClick={e => { e.stopPropagation(); deletePerson(person.id); }}
-                          title="Delete guest"
+                          title={t("deleteGuest")}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 shrink-0"
                         >
                           <X size={11} />
@@ -2565,7 +2602,7 @@ export default function App() {
           {sidebarOpen && (
             <div onMouseDown={e => { e.stopPropagation(); startResize("guests", e); }}
               className="absolute top-0 left-0 h-full w-1.5 cursor-col-resize hover:bg-blue-400/40 transition-colors z-10"
-              title="Drag to resize" />
+              title={t("dragResize")} />
           )}
         </aside>
       </div>
@@ -2578,12 +2615,12 @@ export default function App() {
             style={{ left: Math.min(pageMenu.x, window.innerWidth - 180), top: Math.min(pageMenu.y, window.innerHeight - 100) }}>
             <button onClick={() => { duplicatePage(pageMenu.pageId); setPageMenu(null); }}
               className="w-full text-left px-3 py-1.5 flex items-center gap-2.5 hover:bg-gray-100 text-gray-700 transition-colors">
-              <Copy size={13} /> Duplicate
+              <Copy size={13} /> {t("duplicate")}
             </button>
             {pages.length > 1 && (
               <button onClick={() => { deletePage(pageMenu.pageId); setPageMenu(null); }}
                 className="w-full text-left px-3 py-1.5 flex items-center gap-2.5 hover:bg-red-50 text-red-500 transition-colors">
-                <Trash2 size={13} /> Delete
+                <Trash2 size={13} /> {t("delete")}
               </button>
             )}
           </div>
@@ -2592,7 +2629,7 @@ export default function App() {
 
       {/* Add Person Modal */}
       {addPersonOpen && (
-        <Modal title="Add to list" onClose={() => setAddPersonOpen(false)}>
+        <Modal title={t("addToList")} onClose={() => setAddPersonOpen(false)}>
           <div className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Full name</label>
@@ -2606,19 +2643,19 @@ export default function App() {
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Color</label>
               <div className="mt-1.5 flex gap-2 flex-wrap">
                 {COLORS.map(c => (
-                  <button key={c} onClick={() => setPColor(c)} title="Pick color"
+                  <button key={c} onClick={() => setPColor(c)} title={t("pickColor")}
                     className={["w-8 h-8 rounded-lg border-2 transition-all", pColor === c ? "border-gray-800 scale-110 shadow-md" : "border-transparent hover:scale-105"].join(" ")}
                     style={{ backgroundColor: c }}
                   />
                 ))}
               </div>
               <div className="mt-3 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-900 text-center shadow-sm truncate" style={{ backgroundColor: pColor }}>
-                {pName || "Name preview"}
+                {pName || t("namePreview")}
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => setAddPersonOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
-              <button onClick={addPerson} disabled={!pName.trim()} className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">Add</button>
+              <button onClick={() => setAddPersonOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">{t("cancel")}</button>
+              <button onClick={addPerson} disabled={!pName.trim()} className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">{t("add")}</button>
             </div>
           </div>
         </Modal>
@@ -2626,31 +2663,31 @@ export default function App() {
 
       {/* Add Table Modal */}
       {addTableOpen && (
-        <Modal title="Add table" onClose={() => setAddTableOpen(false)}>
+        <Modal title={t("addTable")} onClose={() => setAddTableOpen(false)}>
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Table name</label>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("tableNameLabel")}</label>
               <input autoFocus value={tName} onChange={e => setTName(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addTable()}
                 className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              {([["top", "Side A", tTop, setTTop], ["bottom", "Side B", tBot, setTBot]] as const).map(([, label, val, setVal]) => (
-                <div key={label}>
+              {([["top", t("sideA"), tTop, setTTop], ["bottom", t("sideB"), tBot, setTBot]] as const).map(([rid, label, val, setVal]) => (
+                <div key={rid}>
                   <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
                   <div className="mt-1.5 flex items-center gap-2 bg-gray-50 rounded-xl border border-gray-200 px-3 py-2">
-                    <button onClick={() => setVal(v => Math.max(1, v - 1))} title="Fewer seats" className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">−</button>
+                    <button onClick={() => setVal(v => Math.max(1, v - 1))} title={t("fewerSeats")} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">−</button>
                     <span className="flex-1 text-center font-bold text-gray-800">{val}</span>
-                    <button onClick={() => setVal(v => Math.min(50, v + 1))} title="More seats" className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">+</button>
+                    <button onClick={() => setVal(v => Math.min(50, v + 1))} title={t("moreSeats")} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">+</button>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 text-center">Total: {tTop + tBot} seats ({tTop} + {tBot})</p>
+            <p className="text-xs text-gray-400 text-center">{t("totalSeats", { n: tTop + tBot, a: tTop, b: tBot })}</p>
             <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => setAddTableOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
-              <button onClick={addTable} disabled={!tName.trim()} className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">Add</button>
+              <button onClick={() => setAddTableOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">{t("cancel")}</button>
+              <button onClick={addTable} disabled={!tName.trim()} className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">{t("add")}</button>
             </div>
           </div>
         </Modal>
@@ -2687,20 +2724,20 @@ export default function App() {
       {showWelcome && (
         <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={dismissWelcome}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-gray-900">Welcome to Event Seating Planner 🎉</h2>
-            <p className="text-sm text-gray-500 mt-1.5">Plan who sits where at your event — drag guests onto tables, in seconds.</p>
+            <h2 className="text-xl font-bold text-gray-900">{t("welcomeTitle")}</h2>
+            <p className="text-sm text-gray-500 mt-1.5">{t("welcomeSub")}</p>
             <div className="mt-5 space-y-3">
               {[
-                { Icon: UserPlus, c: "text-violet-600 bg-violet-50", t: "Add guests", d: "Build your guest list; give people colors and tags." },
-                { Icon: Table2, c: "text-blue-600 bg-blue-50", t: "Create tables", d: "Rectangular or round, with any number of seats." },
-                { Icon: UserCheck, c: "text-green-600 bg-green-50", t: "Drag & drop", d: "Assign, swap, reorder or remove people on the canvas." },
-                { Icon: Copy, c: "text-amber-600 bg-amber-50", t: "Pages", d: "Try multiple layouts as separate drafts." },
-                { Icon: Cloud, c: "text-teal-600 bg-teal-50", t: "Saved in your browser", d: "No account needed. Your work survives refreshes." },
-              ].map(({ Icon, c, t, d }) => (
-                <div key={t} className="flex items-start gap-3">
+                { Icon: UserPlus, c: "text-violet-600 bg-violet-50", title: t("obGuestsT"), d: t("obGuestsD") },
+                { Icon: Table2, c: "text-blue-600 bg-blue-50", title: t("obTablesT"), d: t("obTablesD") },
+                { Icon: UserCheck, c: "text-green-600 bg-green-50", title: t("obDndT"), d: t("obDndD") },
+                { Icon: Copy, c: "text-amber-600 bg-amber-50", title: t("obPagesT"), d: t("obPagesD") },
+                { Icon: Cloud, c: "text-teal-600 bg-teal-50", title: t("obSavedT"), d: t("obSavedD") },
+              ].map(({ Icon, c, title, d }) => (
+                <div key={title} className="flex items-start gap-3">
                   <div className={["w-8 h-8 rounded-lg flex items-center justify-center shrink-0", c].join(" ")}><Icon size={16} /></div>
                   <div>
-                    <div className="text-sm font-semibold text-gray-800">{t}</div>
+                    <div className="text-sm font-semibold text-gray-800">{title}</div>
                     <div className="text-xs text-gray-500">{d}</div>
                   </div>
                 </div>
@@ -2708,7 +2745,7 @@ export default function App() {
             </div>
             <button onClick={dismissWelcome}
               className="mt-6 w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors">
-              Get started
+              {t("getStarted")}
             </button>
           </div>
         </div>
