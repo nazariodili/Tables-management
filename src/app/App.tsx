@@ -64,8 +64,15 @@ function GlobalTooltip() {
     };
     const onDragStart = () => { draggingRef.current = true; hide(); };
     const onDragEnd = () => { draggingRef.current = false; };
+    // Anche i drag basati su mouse (spostamento tavoli/zone, resize) devono
+    // sopprimere il tooltip: appena si preme si nasconde e resta soppresso finché
+    // non si rilascia; dopo, riappare solo rientrando in hover.
+    const onMouseDown = () => { draggingRef.current = true; hide(); };
+    const onMouseUp = () => { draggingRef.current = false; };
     document.addEventListener("mouseover", onOver, true);
     document.addEventListener("mouseout", onOut, true);
+    document.addEventListener("mousedown", onMouseDown, true);
+    document.addEventListener("mouseup", onMouseUp, true);
     document.addEventListener("dragstart", onDragStart, true);
     document.addEventListener("dragend", onDragEnd, true);
     document.addEventListener("drop", onDragEnd, true);
@@ -74,6 +81,8 @@ function GlobalTooltip() {
     return () => {
       document.removeEventListener("mouseover", onOver, true);
       document.removeEventListener("mouseout", onOut, true);
+      document.removeEventListener("mousedown", onMouseDown, true);
+      document.removeEventListener("mouseup", onMouseUp, true);
       document.removeEventListener("dragstart", onDragStart, true);
       document.removeEventListener("dragend", onDragEnd, true);
       document.removeEventListener("drop", onDragEnd, true);
@@ -454,7 +463,7 @@ function TableCard({
   table, people, draggingId, dragOverKey, selected,
   onSeatDragOver, onSeatDrop, onPersonDragStart, onPersonDragEnd,
   onSeatClick, onGapDragOver, onGapDrop, onGapClick,
-  onAdjust, onRemoveSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH,
+  onAdjust, onRemoveSlot, onInsertSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH,
   zoom, isSelected, onSelect, willFreeOnRelease, onTableAreaDragOver, onTableAreaDrop, tagColor,
 }: {
   table: TableData;
@@ -473,6 +482,7 @@ function TableCard({
   onGapClick: (tableId: string, row: "top" | "bottom", afterIdx: number) => void;
   onAdjust: (tableId: string, row: "top" | "bottom", delta: number) => void;
   onRemoveSlot: (tableId: string, row: "top" | "bottom", idx: number) => void;
+  onInsertSlot: (tableId: string, row: "top" | "bottom", afterIdx: number) => void;
   onDelete: () => void;
   onRename: (name: string) => void;
   onStartTableDrag: (e: RMouseEvent<HTMLDivElement>) => void;
@@ -592,13 +602,26 @@ function TableCard({
       <div
         key={key}
         style={{ width: horiz ? GAP_NORMAL : SEAT_W, height: horiz ? SEAT_H : GAP_NORMAL, flexShrink: 0, position: "relative" }}
-        className={showClickTarget ? "cursor-pointer" : ""}
+        className={"group/gap " + (showClickTarget ? "cursor-pointer" : "")}
         onDragOver={e => onGapDragOver(e, key)}
         onDrop={e => onGapDrop(e, table.id, row, afterIdx)}
         onClick={() => onGapClick(table.id, row, afterIdx)}
       >
         {/* Invisible wider hit area so the gap is easier to target */}
         <div style={{ position: "absolute", inset: horiz ? "0 -6px" : "-6px 0", zIndex: 5 }} />
+        {/* Hover: linea + pulsante "+" per inserire un posto vuoto qui */}
+        {!isDragging && (
+          <div className="opacity-0 group-hover/gap:opacity-100 transition-opacity" style={{ position: "absolute", inset: 0, zIndex: 16, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+            <div style={{ position: "absolute", borderRadius: 4, background: "#3b82f6", ...(horiz ? { left: "50%", top: 4, bottom: 4, width: 2, transform: "translateX(-50%)" } : { top: "50%", left: 4, right: 4, height: 2, transform: "translateY(-50%)" }) }} />
+            <button
+              onMouseDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); onInsertSlot(table.id, row, afterIdx); }}
+              title="Add an empty seat here"
+              style={{ pointerEvents: "auto", width: 18, height: 18, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
+              <Plus size={12} />
+            </button>
+          </div>
+        )}
         {/* Blue insert line */}
         {showInsert && (
           <div style={horiz ? {
@@ -842,22 +865,22 @@ function TableChrome({
         {isSelected && (
           <div className="flex items-center gap-1.5 bg-white rounded-xl shadow-lg border border-gray-200 px-2 h-11" onMouseDown={e => e.stopPropagation()}
             style={{ transform: extra ? `rotate(${-extra}deg)` : undefined }}>
-            <span className="text-xs text-gray-400 font-medium px-1 tabular-nums">{occupied}/{total}</span>
+            <span title="Occupied / total seats" className="text-xs text-gray-400 font-medium px-1 tabular-nums">{occupied}/{total}</span>
             <div className="w-px h-5 bg-gray-200" />
             {isRound ? (
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400 font-semibold px-1">Seats</span>
                 <button onClick={() => onAdjust(table.id, "top", -1)} title="Remove a seat" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
-                <span className="w-5 text-center text-sm font-bold text-gray-700">{table.topSeats.length}</span>
+                <span title="Number of seats" className="w-5 text-center text-sm font-bold text-gray-700">{table.topSeats.length}</span>
                 <button onClick={() => onAdjust(table.id, "top", 1)} title="Add a seat" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
               </div>
             ) : (
               <>
                 {(["top", "bottom"] as const).map(row => (
                   <div key={row} className="flex items-center gap-1">
-                    <span className="text-xs text-gray-400 font-semibold w-3 text-center">{row === "top" ? "A" : "B"}</span>
+                    <span title={`Row ${row === "top" ? "A" : "B"}`} className="text-xs text-gray-400 font-semibold w-3 text-center">{row === "top" ? "A" : "B"}</span>
                     <button onClick={() => onAdjust(table.id, row, -1)} title={`Remove a seat from row ${row === "top" ? "A" : "B"}`} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
-                    <span className="w-5 text-center text-sm font-bold text-gray-700">{row === "top" ? table.topSeats.length : table.bottomSeats.length}</span>
+                    <span title={`Seats in row ${row === "top" ? "A" : "B"}`} className="w-5 text-center text-sm font-bold text-gray-700">{row === "top" ? table.topSeats.length : table.bottomSeats.length}</span>
                     <button onClick={() => onAdjust(table.id, row, 1)} title={`Add a seat to row ${row === "top" ? "A" : "B"}`} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
                   </div>
                 ))}
@@ -1010,15 +1033,19 @@ export default function App() {
     }));
   }, []);
 
-  // ── History (undo/redo) ───────────────────────────────────────────────────
+  // ── History (undo/redo) — snapshot dell'INTERO stato pagine (tavoli + zone),
+  // così undo/redo copre TUTTO: spostamenti, rotazioni, aggiunta/modifica zone,
+  // sedute, ecc. ────────────────────────────────────────────────────────────
   const tablesRef = useRef(tables);
   tablesRef.current = tables;
-  const undoStack = useRef<TableData[][]>([]);
-  const redoStack = useRef<TableData[][]>([]);
+  const pagesRef = useRef(pages);
+  pagesRef.current = pages;
+  const undoStack = useRef<Page[][]>([]);
+  const redoStack = useRef<Page[][]>([]);
 
   const pushHistory = useCallback(() => {
-    undoStack.current.push(tablesRef.current);
-    if (undoStack.current.length > 100) undoStack.current.shift();
+    undoStack.current.push(pagesRef.current);
+    if (undoStack.current.length > 200) undoStack.current.shift();
     redoStack.current = [];
   }, []);
 
@@ -1026,6 +1053,13 @@ export default function App() {
     pushHistory();
     setTables(updater);
   }, [pushHistory, setTables]);
+
+  // Come setShapes, ma registra prima uno snapshot in history (per edit discreti
+  // delle zone: creazione, eliminazione, colore, testo, dimensione testo…).
+  const setShapesH = useCallback((updater: Shape[] | ((prev: Shape[]) => Shape[])) => {
+    pushHistory();
+    setShapes(updater);
+  }, [pushHistory, setShapes]);
 
   const [dragInfo, setDragInfo] = useState<{ personId: string; src: DragSrc } | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -1169,7 +1203,7 @@ export default function App() {
       if (e.key === "Escape") { setShapeMode(false); setTableMenuOpen(false); setAddPersonOpen(false); setAddTableOpen(false); setEditingPersonId(null); setTagsModalOpen(false); setSelectedShapeId(null); setSelectedTableId(null); setEditingShapeId(null); setPageMenu(null); return; }
       if ((e.key === "Delete" || e.key === "Backspace") && !(e.target as HTMLElement).closest("input,textarea")) {
         if (selectedShapeIdRef.current) {
-          setShapes(prev => prev.filter(s => s.id !== selectedShapeIdRef.current));
+          setShapesH(prev => prev.filter(s => s.id !== selectedShapeIdRef.current));
           setSelectedShapeId(null);
           return;
         }
@@ -1184,16 +1218,16 @@ export default function App() {
       if (e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         const prev = undoStack.current.pop();
-        if (prev !== undefined) { redoStack.current.push(tablesRef.current); setTables(prev); }
+        if (prev !== undefined) { redoStack.current.push(pagesRef.current); setPages(prev); }
       } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
         e.preventDefault();
         const next = redoStack.current.pop();
-        if (next !== undefined) { undoStack.current.push(tablesRef.current); setTables(next); }
+        if (next !== undefined) { undoStack.current.push(pagesRef.current); setPages(next); }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [setTables, setShapes]);
+  }, [setTables, setShapes, setShapesH, pushHistory]);
 
   // ── Page CRUD ─────────────────────────────────────────────────────────────
 
@@ -1381,10 +1415,9 @@ export default function App() {
     e.stopPropagation();
     setSelectedTableId(tableId);
     setSelectedShapeId(null);
-    pushHistory();
     tableDragRef.current = { id: tableId, mx: e.clientX, my: e.clientY, tx, ty };
     setIsDraggingTable(true);
-  }, [pushHistory]);
+  }, []);
 
   const handleShapeMouseDown = useCallback((e: RMouseEvent<HTMLDivElement>, shape: Shape) => {
     e.stopPropagation();
@@ -1395,12 +1428,19 @@ export default function App() {
 
   const handleShapeResizeStart = useCallback((e: RMouseEvent<HTMLDivElement>, shape: Shape, handle: string) => {
     e.stopPropagation();
-    pushHistory();
     setSelectedShapeId(shape.id);
     shapeResizeRef.current = { id: shape.id, handle, mx: e.clientX, my: e.clientY, sx: shape.x, sy: shape.y, sw: shape.w, sh: shape.h };
-  }, [pushHistory]);
+  }, []);
+
+  // Snapshot in history al PRIMO movimento di una gesture (drag/resize di tavoli
+  // o zone), così un semplice click di selezione non crea voci di undo a vuoto.
+  const gestureSnappedRef = useRef(false);
 
   const handleMouseMove = useCallback((e: RMouseEvent<HTMLDivElement>) => {
+    if ((shapeResizeRef.current || tableDragRef.current || shapeDragRef.current) && !gestureSnappedRef.current) {
+      gestureSnappedRef.current = true;
+      pushHistory();
+    }
     if (shapeResizeRef.current) {
       const { id, handle, mx, my, sx, sy, sw, sh } = shapeResizeRef.current;
       const dx = (e.clientX - mx) / zoomRef.current;
@@ -1443,7 +1483,7 @@ export default function App() {
       const w = Math.abs(ex - sx), h = Math.abs(ey - sy);
       if (w >= 20 && h >= 20) {
         const id = uid();
-        setShapes(prev => [...prev, { id, x, y, w, h, label: "", color: activeShapeColorRef.current }]);
+        setShapesH(prev => [...prev, { id, x, y, w, h, label: "", color: activeShapeColorRef.current }]);
         // Dopo aver disegnato una zona si esce dalla modalità e la si seleziona.
         setShapeMode(false);
         setSelectedShapeId(id);
@@ -1455,9 +1495,10 @@ export default function App() {
     shapeResizeRef.current = null;
     tableDragRef.current = null;
     panStartRef.current = null;
+    gestureSnappedRef.current = false;
     setIsPanning(false);
     setIsDraggingTable(false);
-  }, [setShapes]);
+  }, [setShapesH]);
 
   const fitView = useCallback(() => {
     const vp = viewportRef.current;
@@ -1741,6 +1782,16 @@ export default function App() {
     }));
   }, [setTablesH]);
 
+  // Inserisce un posto vuoto tra due sedie (indice afterIdx).
+  const insertSlot = useCallback((tableId: string, row: "top" | "bottom", afterIdx: number) => {
+    setTablesH(prev => prev.map(t => {
+      if (t.id !== tableId) return t;
+      const arr = row === "top" ? [...t.topSeats] : [...t.bottomSeats];
+      arr.splice(afterIdx, 0, null);
+      return row === "top" ? { ...t, topSeats: arr } : { ...t, bottomSeats: arr };
+    }));
+  }, [setTablesH]);
+
   const adjustSeats = useCallback((tableId: string, row: "top" | "bottom", delta: number) => {
     setTablesH(prev => prev.map(t => {
       if (t.id !== tableId) return t;
@@ -1818,23 +1869,23 @@ export default function App() {
   };
 
   const rotateTable = (tableId: string, deg: number) => {
-    setTables(prev => prev.map(t => t.id === tableId ? { ...t, rotation: deg } : t));
+    setTablesH(prev => prev.map(t => t.id === tableId ? { ...t, rotation: deg } : t));
   };
 
   // ── Shape management ────────────────────────────────────────────────────────
 
   const addShape = (x: number, y: number, w: number, h: number) => {
     if (w < 20 || h < 20) return;
-    setShapes(prev => [...prev, { id: uid(), x, y, w, h, label: "", color: activeShapeColor }]);
+    setShapesH(prev => [...prev, { id: uid(), x, y, w, h, label: "", color: activeShapeColor }]);
   };
 
   const deleteShape = (id: string) => {
-    setShapes(prev => prev.filter(s => s.id !== id));
+    setShapesH(prev => prev.filter(s => s.id !== id));
     if (selectedShapeId === id) setSelectedShapeId(null);
   };
 
   const updateShape = (id: string, patch: Partial<Shape>) => {
-    setShapes(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+    setShapesH(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
   };
 
   const toCanvas = (clientX: number, clientY: number) => {
@@ -2018,6 +2069,7 @@ export default function App() {
                 onGapDragOver={onGapDragOver} onGapDrop={onGapDrop} onGapClick={onGapClick}
                 onAdjust={adjustSeats}
                 onRemoveSlot={removeSlot}
+                onInsertSlot={insertSlot}
                 onDelete={() => deleteTable(table.id)}
                 onRename={name => renameTable(table.id, name)}
                 onFlip={() => flipTable(table.id)}
