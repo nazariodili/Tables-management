@@ -567,9 +567,13 @@ function TableCard({
           </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center group/empty">
-            <span className="text-[10px] text-gray-300 font-medium group-hover/empty:opacity-0 transition-opacity">
-              {idx + 1}
-            </span>
+            {/* Numero solo per i rotondi (senza asse). Nei rettangolari il
+                riferimento è l'asse laterale: evita ripetizioni. */}
+            {table.shape === "round" && (
+              <span className="text-[10px] text-gray-300 font-medium group-hover/empty:opacity-0 transition-opacity">
+                {idx + 1}
+              </span>
+            )}
             <button
               onClick={e => { e.stopPropagation(); onRemoveSlot(table.id, row, idx); }}
               className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/empty:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
