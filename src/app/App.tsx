@@ -220,19 +220,23 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 // ─── EditPersonModal ──────────────────────────────────────────────────────────
 
-function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageTags }: {
+function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag, onRenameTag, onColorTag, onDeleteTag }: {
   person: Person;
   onSave: (name: string, color: string, tags: string[], allergies: string, notes: string) => void;
   onDelete: () => void;
   onClose: () => void;
   tagDefs: TagDef[];
-  onManageTags: () => void;
+  onAddTag: (name: string) => void;
+  onRenameTag: (oldName: string, newName: string) => void;
+  onColorTag: (name: string, color: string) => void;
+  onDeleteTag: (name: string) => void;
 }) {
   const [name, setName] = useState(person.name);
   const [color, setColor] = useState(person.color);
   const [tags, setTags] = useState<string[]>(person.tags ?? []);
   const [allergies, setAllergies] = useState(person.allergies ?? "");
   const [notes, setNotes] = useState(person.notes ?? "");
+  const [managing, setManaging] = useState(false);
 
   const toggle = (tag: string) =>
     setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
@@ -262,27 +266,35 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
         <div>
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tags</label>
-            <button onClick={onManageTags} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Manage tags</button>
+            <button onClick={() => setManaging(v => !v)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+              {managing ? "Done" : "Manage tags"}
+            </button>
           </div>
-          <div className="mt-1.5 flex gap-2 flex-wrap">
-            {tagDefs.length === 0 && <span className="text-xs text-gray-400">No tags yet — click "Manage tags".</span>}
-            {tagDefs.map(({ name, color }) => {
-              const active = tags.includes(name);
-              return (
-                <button key={name} onClick={() => toggle(name)}
-                  title={active ? `Remove "${name}" tag` : `Add "${name}" tag`}
-                  className={[
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
-                    active ? "text-white border-transparent shadow-sm" : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300",
-                  ].join(" ")}
-                  style={active ? { backgroundColor: color, borderColor: color } : {}}
-                >
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: active ? "#fff" : color }} />
-                  {name}
-                </button>
-              );
-            })}
-          </div>
+          {managing ? (
+            <div className="mt-1.5 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+              <TagEditorList tagDefs={tagDefs} onAdd={onAddTag} onRename={onRenameTag} onColor={onColorTag} onDelete={onDeleteTag} />
+            </div>
+          ) : (
+            <div className="mt-1.5 flex gap-2 flex-wrap">
+              {tagDefs.length === 0 && <span className="text-xs text-gray-400">No tags yet — click "Manage tags".</span>}
+              {tagDefs.map(({ name, color }) => {
+                const active = tags.includes(name);
+                return (
+                  <button key={name} onClick={() => toggle(name)}
+                    title={active ? `Remove "${name}" tag` : `Add "${name}" tag`}
+                    className={[
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                      active ? "text-white border-transparent shadow-sm" : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300",
+                    ].join(" ")}
+                    style={active ? { backgroundColor: color, borderColor: color } : {}}
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: active ? "#fff" : color }} />
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         <div>
           <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Allergies</label>
@@ -315,6 +327,55 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
   );
 }
 
+// ─── TagEditorList — lista CRUD dei tag (riusabile inline o dentro una modale) ──
+
+function TagEditorList({ tagDefs, onAdd, onRename, onColor, onDelete }: {
+  tagDefs: TagDef[];
+  onAdd: (name: string) => void;
+  onRename: (oldName: string, newName: string) => void;
+  onColor: (name: string, color: string) => void;
+  onDelete: (name: string) => void;
+}) {
+  const [newName, setNewName] = useState("");
+  const add = () => { if (newName.trim()) { onAdd(newName); setNewName(""); } };
+  return (
+    <div className="space-y-3">
+      {tagDefs.length === 0 && <p className="text-xs text-gray-400">No tags yet. Add one below.</p>}
+      <div className="space-y-2 max-h-56 overflow-y-auto">
+        {tagDefs.map(t => (
+          <div key={t.name} className="flex items-center gap-2">
+            <div className="flex items-center gap-1 shrink-0">
+              {TAG_PALETTE.map(c => (
+                <button key={c} onClick={() => onColor(t.name, c)} title="Color"
+                  className="w-5 h-5 rounded-full border-2 box-border transition-opacity hover:opacity-70"
+                  style={{ backgroundColor: c, borderColor: t.color === c ? "#111827" : "transparent" }} />
+              ))}
+            </div>
+            <input defaultValue={t.name} key={t.name + t.color}
+              onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) onRename(t.name, v); }}
+              onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+              className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <button onClick={() => onDelete(t.name)} title="Delete tag"
+              className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+        <input value={newName} onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") add(); }}
+          placeholder="New tag name"
+          className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50" />
+        <button onClick={add} disabled={!newName.trim()}
+          className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 flex items-center gap-1 shrink-0">
+          <Plus size={14} /> Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── ManageTagsModal — CRUD dei tag (nome + colore) ───────────────────────────
 
 function ManageTagsModal({ tagDefs, onAdd, onRename, onColor, onDelete, onClose }: {
@@ -325,44 +386,9 @@ function ManageTagsModal({ tagDefs, onAdd, onRename, onColor, onDelete, onClose 
   onDelete: (name: string) => void;
   onClose: () => void;
 }) {
-  const [newName, setNewName] = useState("");
-  const add = () => { if (newName.trim()) { onAdd(newName); setNewName(""); } };
   return (
     <Modal title="Manage tags" onClose={onClose}>
-      <div className="space-y-3">
-        {tagDefs.length === 0 && <p className="text-xs text-gray-400">No tags yet. Add one below.</p>}
-        <div className="space-y-2 max-h-72 overflow-y-auto">
-          {tagDefs.map(t => (
-            <div key={t.name} className="flex items-center gap-2">
-              <div className="flex items-center gap-1 shrink-0">
-                {TAG_PALETTE.map(c => (
-                  <button key={c} onClick={() => onColor(t.name, c)} title="Color"
-                    className="w-5 h-5 rounded-full border-2 box-border transition-opacity hover:opacity-70"
-                    style={{ backgroundColor: c, borderColor: t.color === c ? "#111827" : "transparent" }} />
-                ))}
-              </div>
-              <input defaultValue={t.name} key={t.name + t.color}
-                onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) onRename(t.name, v); }}
-                onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-              <button onClick={() => onDelete(t.name)} title="Delete tag"
-                className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-          <input value={newName} onChange={e => setNewName(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") add(); }}
-            placeholder="New tag name"
-            className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50" />
-          <button onClick={add} disabled={!newName.trim()}
-            className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 flex items-center gap-1 shrink-0">
-            <Plus size={14} /> Add
-          </button>
-        </div>
-      </div>
+      <TagEditorList tagDefs={tagDefs} onAdd={onAdd} onRename={onRename} onColor={onColor} onDelete={onDelete} />
     </Modal>
   );
 }
@@ -2637,7 +2663,10 @@ export default function App() {
           onDelete={() => { deletePerson(editingPersonId); setEditingPersonId(null); }}
           onClose={() => setEditingPersonId(null)}
           tagDefs={tagDefs}
-          onManageTags={() => setTagsModalOpen(true)}
+          onAddTag={addTagDef}
+          onRenameTag={renameTagDef}
+          onColorTag={setTagDefColor}
+          onDeleteTag={deleteTagDef}
         />
       )}
 
