@@ -208,7 +208,7 @@ function ManageTagsModal({ tagDefs, onAdd, onRename, onColor, onDelete, onClose 
               <div className="flex items-center gap-1 shrink-0">
                 {TAG_PALETTE.map(c => (
                   <button key={c} onClick={() => onColor(t.name, c)} title="Color"
-                    className="w-5 h-5 rounded-full border-2 box-border transition-transform hover:scale-110"
+                    className="w-5 h-5 rounded-full border-2 box-border transition-opacity hover:opacity-70"
                     style={{ backgroundColor: c, borderColor: t.color === c ? "#111827" : "transparent" }} />
                 ))}
               </div>
