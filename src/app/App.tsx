@@ -1,5 +1,90 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, Square, UserPlus, Table2, Cloud, CloudOff, AArrowDown, AArrowUp, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, AArrowDown, AArrowUp, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus } from "lucide-react";
+
+// ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
+// Figma. Ricreata inline perché non presente in questa versione di lucide. ──────
+function VectorSquare({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="4" height="4" rx="0.5" />
+      <rect x="17" y="3" width="4" height="4" rx="0.5" />
+      <rect x="3" y="17" width="4" height="4" rx="0.5" />
+      <rect x="17" y="17" width="4" height="4" rx="0.5" />
+      <line x1="7" y1="5" x2="17" y2="5" />
+      <line x1="7" y1="19" x2="17" y2="19" />
+      <line x1="5" y1="7" x2="5" y2="17" />
+      <line x1="19" y1="7" x2="19" y2="17" />
+    </svg>
+  );
+}
+
+// ─── Tooltip globale: i tooltip nativi (attributo title) compaiono con forte
+// ritardo o non compaiono. Questo componente, montato una volta a livello di
+// root, intercetta l'hover su qualsiasi elemento con `title`, ne "adotta" il
+// testo (spostandolo in data-tip così il tooltip nativo non parte) e mostra una
+// pill scura dopo un breve delay. Funziona anche su elementi resi dinamicamente
+// (modali, toolbar flottanti) perché ascolta sull'intero document. ──────────────
+function GlobalTooltip() {
+  const [tip, setTip] = useState<{ text: string; x: number; y: number; place: "top" | "bottom" } | null>(null);
+  const timer = useRef<number | null>(null);
+  const currentEl = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const DELAY = 180;
+    const clearTimer = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
+    const hide = () => { clearTimer(); currentEl.current = null; setTip(null); };
+
+    const onOver = (e: globalThis.MouseEvent) => {
+      const el = (e.target as HTMLElement)?.closest?.("[title],[data-tip]") as HTMLElement | null;
+      if (!el) return;
+      // Sposta title → data-tip per disattivare il tooltip nativo.
+      const native = el.getAttribute("title");
+      if (native) { el.setAttribute("data-tip", native); el.removeAttribute("title"); }
+      const text = el.getAttribute("data-tip");
+      if (!text) return;
+      if (currentEl.current === el) return;
+      currentEl.current = el;
+      clearTimer();
+      timer.current = window.setTimeout(() => {
+        const r = el.getBoundingClientRect();
+        const place: "top" | "bottom" = r.top > 46 ? "top" : "bottom";
+        const x = Math.min(Math.max(r.left + r.width / 2, 10), window.innerWidth - 10);
+        const y = place === "top" ? r.top - 8 : r.bottom + 8;
+        setTip({ text, x, y, place });
+      }, DELAY);
+    };
+    const onOut = (e: globalThis.MouseEvent) => {
+      const related = e.relatedTarget as HTMLElement | null;
+      if (currentEl.current && related && currentEl.current.contains(related)) return;
+      hide();
+    };
+    document.addEventListener("mouseover", onOver, true);
+    document.addEventListener("mouseout", onOut, true);
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("wheel", hide, true);
+    return () => {
+      document.removeEventListener("mouseover", onOver, true);
+      document.removeEventListener("mouseout", onOut, true);
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("wheel", hide, true);
+      clearTimer();
+    };
+  }, []);
+
+  if (!tip) return null;
+  return (
+    <div style={{
+      position: "fixed", left: tip.x, top: tip.y,
+      transform: tip.place === "top" ? "translate(-50%,-100%)" : "translate(-50%,0)",
+      background: "#1f2937", color: "#fff", fontSize: 11.5, fontWeight: 600, lineHeight: 1.3,
+      padding: "4px 8px", borderRadius: 7, whiteSpace: "nowrap", pointerEvents: "none",
+      zIndex: 9999, boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
+    }}>
+      {tip.text}
+    </div>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1668,6 +1753,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 font-[Inter,sans-serif] overflow-hidden">
+      <GlobalTooltip />
 
       {/* Body (nessun header: la barra strumenti è flottante in basso).
           Sidebar come pannelli floating sopra il canvas a tutta larghezza. */}
@@ -1907,13 +1993,13 @@ export default function App() {
 
         {/* Bottom bar (stile Figma, icone-only): logo · azioni · zoom · stato */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
-            <div className="flex items-center gap-0.5 bg-white rounded-2xl shadow-lg border border-gray-200 px-2 h-11">
+            <div className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-gray-200 px-2.5 h-16">
               {/* Add table — menu tipo (rettangolare / rotondo) */}
               <div className="relative">
                 <button onClick={() => setTableMenuOpen(v => !v)} title="Add table"
-                  className={["w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
+                  className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     tableMenuOpen ? "bg-blue-100 text-blue-700" : "text-blue-600 hover:bg-blue-50"].join(" ")}>
-                  <SquarePlus size={17} />
+                  <SquarePlus size={24} />
                 </button>
                 {tableMenuOpen && (
                   <>
@@ -1933,16 +2019,16 @@ export default function App() {
               </div>
               {/* Add person */}
               <button onClick={() => setAddPersonOpen(true)} title="Add person"
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-violet-600 hover:bg-violet-50 transition-colors">
-                <UserPlus size={17} />
+                className="w-12 h-12 flex items-center justify-center rounded-xl text-violet-600 hover:bg-violet-50 transition-colors">
+                <UserPlus size={24} />
               </button>
               {/* Zone (disegno forme) */}
               <div className="relative">
                 <button onClick={() => { setShapeMode(v => !v); setSelectedShapeId(null); setEditingShapeId(null); }} title="Draw zones"
-                  className={["w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
+                  className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     shapeMode ? "bg-amber-500 text-white" : "text-amber-600 hover:bg-amber-50",
                   ].join(" ")}>
-                  <Square size={17} />
+                  <VectorSquare size={23} />
                 </button>
                 {shapeMode && (
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-2.5 py-2">
@@ -1954,51 +2040,51 @@ export default function App() {
                 )}
               </div>
 
-              <div className="w-px h-5 bg-gray-200 mx-1" />
+              <div className="w-px h-7 bg-gray-200 mx-1.5" />
 
               {/* Zoom */}
               <button onClick={() => { const nz = Math.max(zoom / 1.3, 0.08); const vp = viewportRef.current; if (!vp) return; const cx = vp.clientWidth/2; const cy = vp.clientHeight/2; const cxc = (cx - panX) / zoom; const cyc = (cy - panY) / zoom; setPanX(cx - cxc*nz); setPanY(cy - cyc*nz); setZoom(nz); }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors" title="Zoom out">
-                <ZoomOut size={15} />
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title="Zoom out">
+                <ZoomOut size={21} />
               </button>
               <button onClick={() => { setZoom(1); setPanX(60); setPanY(60); }}
-                className="px-1 text-xs font-mono font-semibold text-gray-600 hover:text-gray-900 min-w-[3rem] text-center transition-colors" title="Reset zoom">
+                className="px-1.5 text-sm font-mono font-semibold text-gray-600 hover:text-gray-900 min-w-[3.25rem] text-center transition-colors" title="Reset zoom">
                 {Math.round(zoom * 100)}%
               </button>
               <button onClick={() => { const nz = Math.min(zoom * 1.3, 4); const vp = viewportRef.current; if (!vp) return; const cx = vp.clientWidth/2; const cy = vp.clientHeight/2; const cxc = (cx - panX) / zoom; const cyc = (cy - panY) / zoom; setPanX(cx - cxc*nz); setPanY(cy - cyc*nz); setZoom(nz); }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors" title="Zoom in">
-                <ZoomIn size={15} />
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title="Zoom in">
+                <ZoomIn size={21} />
               </button>
               <button onClick={fitView}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors" title="Fit to screen">
-                <Maximize2 size={14} />
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title="Fit to screen">
+                <Maximize2 size={20} />
               </button>
 
-              <div className="w-px h-5 bg-gray-200 mx-1" />
+              <div className="w-px h-7 bg-gray-200 mx-1.5" />
 
               {/* Import / Export JSON */}
               <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) importData(f); e.target.value = ""; }} />
               <button onClick={() => fileInputRef.current?.click()} title="Import (JSON)"
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
-                <Upload size={15} />
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
+                <Upload size={21} />
               </button>
               <button onClick={exportData} title="Export (JSON)"
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
-                <Download size={15} />
+                className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
+                <Download size={21} />
               </button>
 
-              <div className="w-px h-5 bg-gray-200 mx-1" />
+              <div className="w-px h-7 bg-gray-200 mx-1.5" />
 
               {/* Stato salvataggio (cloud) */}
-              <div className="w-8 h-8 flex items-center justify-center"
+              <div className="w-12 h-12 flex items-center justify-center"
                 title={
                   saveStatus === "saving" ? "Saving…" :
                   saveStatus === "error"  ? "Save error" : "Saved"
                 }>
                 {saveStatus === "error"
-                  ? <CloudOff size={17} className="text-red-500" />
-                  : <Cloud size={17} className={
+                  ? <CloudOff size={23} className="text-red-500" />
+                  : <Cloud size={23} className={
                       saveStatus === "saving" ? "text-gray-400 animate-pulse" : "text-green-500"
                     } />}
               </div>
