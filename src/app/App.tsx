@@ -723,14 +723,21 @@ function TableCard({
                 }} />
               )}
               {!isDragging && (
-                <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={e => { e.stopPropagation(); onInsertSlot(table.id, "top", afterIdx); }}
-                  title="Add an empty seat here"
-                  className="opacity-0 group-hover/gap:opacity-100 transition-opacity"
-                  style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
-                  <Plus size={12} style={{ flexShrink: 0 }} />
-                </button>
+                <>
+                  <div className="opacity-0 group-hover/gap:opacity-100 transition-opacity" style={{
+                    position: "absolute", left: "50%", top: "50%", zIndex: 1,
+                    width: 3, height: seatH, transform: `translate(-50%,-50%) rotate(${(mid * 180) / Math.PI + 90}deg)`,
+                    borderRadius: 4, background: "#3b82f6",
+                  }} />
+                  <button
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => { e.stopPropagation(); onInsertSlot(table.id, "top", afterIdx); }}
+                    title="Add an empty seat here"
+                    className="opacity-0 group-hover/gap:opacity-100 transition-opacity"
+                    style={{ position: "relative", zIndex: 2, width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
+                    <Plus size={12} style={{ flexShrink: 0 }} />
+                  </button>
+                </>
               )}
             </div>
           );
@@ -740,6 +747,7 @@ function TableCard({
   }
 
   const ROW_LABEL_W = 18;
+  const AXIS_GAP = 24; // distanza fra le due righe (0°) / colonne (90°) — uguale
   // Orientamento a scaloni di 90°. Per orizzontale (0/180) si usa il layout a
   // righe; per verticale (90/270) il layout a colonne. Il residuo di 180° è
   // applicato via CSS e ogni sedia/etichetta è contro-ruotata così i NOMI
@@ -768,27 +776,28 @@ function TableCard({
       <div className="p-5">
         {axisVertical ? (
           /* VERTICALE: due colonne (A / B), pill orizzontali impilati, numeri a sx */
-          <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: AXIS_GAP, alignItems: "flex-start" }}>
             {(["top", "bottom"] as const).map(row => {
               const seats = row === "top" ? table.topSeats : table.bottomSeats;
+              const withNums = row === "top"; // numeri solo da un lato (prima colonna)
               return (
                 <div key={row} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />
+                    {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />}
                     {rowLabel(row === "top" ? "A" : "B", true)}
                   </div>
                   <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />
+                    {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />}
                     {renderGap(row, 0, "v")}
                   </div>
                   {seats.map((pid, i) => (
                     <div key={i} style={{ display: "flex", flexDirection: "column" }}>
                       <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={{ width: ROW_LABEL_W, flexShrink: 0, textAlign: "center", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{i + 1}</div>
+                        {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0, textAlign: "center", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{i + 1}</div>}
                         {renderSeat(row, pid, i, undefined, cDeg)}
                       </div>
                       <div style={{ display: "flex", alignItems: "center" }}>
-                        <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />
+                        {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />}
                         {renderGap(row, i + 1, "v")}
                       </div>
                     </div>
@@ -811,7 +820,7 @@ function TableCard({
               ))}
             </div>
 
-            <div className="relative my-4" />
+            <div style={{ height: AXIS_GAP }} />
 
             <div style={{ display: "flex", alignItems: "center" }}>
               {rowLabel("B", false)}
