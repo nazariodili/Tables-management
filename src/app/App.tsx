@@ -1162,6 +1162,19 @@ export default function App() {
   // Sidebar
   const [pagesOpen, setPagesOpen] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Scorciatoia: Cmd/Ctrl + Shift + \ (tasto "|") apre/chiude tutti i pannelli.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.code === "Backslash" || e.key === "|" || e.key === "\\")) {
+        e.preventDefault();
+        const target = !(pagesOpen && sidebarOpen);
+        setPagesOpen(target);
+        setSidebarOpen(target);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pagesOpen, sidebarOpen]);
   // Larghezze regolabili (entro range min/max)
   const PAGES_MIN = 150, PAGES_MAX = 320;
   const GUESTS_MIN = 260, GUESTS_MAX = 520;
@@ -1660,7 +1673,7 @@ export default function App() {
     setTablesH(prev => [...prev, {
       id,
       name: `Table ${prev.length + 1}`,
-      topSeats: Array(8).fill(null),
+      topSeats: Array(shape === "round" ? 6 : 8).fill(null),
       bottomSeats: shape === "round" ? [] : Array(8).fill(null),
       x: Math.round(cx - 200),
       y: Math.round(cy - 120),
@@ -2147,9 +2160,17 @@ export default function App() {
           <div className={["shrink-0 px-3.5 py-3", sidebarOpen ? "space-y-2 border-b border-gray-100" : ""].join(" ")}>
             <div className="flex items-center justify-between gap-2">
               <SidebarToggle label={GUESTS_LABEL} side="right" open={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} variant="header" />
-              <span className="text-xs font-bold bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 whitespace-nowrap shrink-0">
-                {totalAssigned}/{totalPeople}
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-xs font-bold bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 whitespace-nowrap">
+                  {totalAssigned}/{totalPeople}
+                </span>
+                {sidebarOpen && (
+                  <button onClick={e => { e.stopPropagation(); setAddPersonOpen(true); }} title="Add guest"
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors shrink-0">
+                    <UserPlus size={15} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Search */}
