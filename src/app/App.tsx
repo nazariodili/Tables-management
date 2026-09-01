@@ -746,8 +746,8 @@ function TableCard({
     );
   }
 
-  const ROW_LABEL_W = 18;
-  const AXIS_GAP = 24; // distanza fra le due righe (0°) / colonne (90°) — uguale
+  const ROW_LABEL_W = 24; // distanza uniforme fra le etichette d'asse (A/B, numeri) e gli slot
+  const AXIS_GAP = 16; // distanza fra le due righe (0°) / colonne (90°) — uguale
   // Orientamento a scaloni di 90°. Per orizzontale (0/180) si usa il layout a
   // righe; per verticale (90/270) il layout a colonne. Il residuo di 180° è
   // applicato via CSS e ogni sedia/etichetta è contro-ruotata così i NOMI
@@ -920,7 +920,7 @@ function TableChrome({
                 <div className="w-px h-5 bg-gray-200" />
                 {/* Rotazione: unico pulsante che alterna orizzontale (0°) / verticale (90°) */}
                 <button onClick={() => onRotate(deg === 90 ? 0 : 90)} title={deg === 90 ? "Make horizontal" : "Make vertical"}
-                  className={["w-8 h-8 flex items-center justify-center rounded-lg transition-colors", deg === 90 ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:text-blue-500 hover:bg-blue-50"].join(" ")}>
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
                   {deg === 90 ? <RotateCcwSquare size={17} /> : <RotateCwSquare size={17} />}
                 </button>
               </>
