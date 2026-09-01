@@ -617,8 +617,8 @@ function TableCard({
               onMouseDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onInsertSlot(table.id, row, afterIdx); }}
               title="Add an empty seat here"
-              style={{ pointerEvents: "auto", width: 18, height: 18, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
-              <Plus size={12} />
+              style={{ pointerEvents: "auto", width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
+              <Plus size={12} style={{ flexShrink: 0 }} />
             </button>
           </div>
         )}
