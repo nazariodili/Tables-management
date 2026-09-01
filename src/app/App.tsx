@@ -614,29 +614,39 @@ function TableCard({
     const N = Math.max(ring.length, 1);
     const seatW = 128, seatH = 44, gap = 16;
     const radius = N <= 1 ? 84 : Math.max(84, (seatW + gap) / (2 * Math.sin(Math.PI / N)));
-    const box = 2 * radius + seatW + 8;
-    const c = box / 2;
+    // Box rettangolare: la larghezza deve contenere le sedie estreme (seatW), ma
+    // l'altezza solo (seatH). Così sopra/sotto non resta spazio morto e il
+    // titolo (ancorato al bordo superiore) sta vicino al tavolo.
+    const boxW = 2 * radius + seatW + 8;
+    const boxH = 2 * radius + seatH + 8;
+    const cx = boxW / 2, cy = boxH / 2;
     const discD = Math.max(72, 2 * radius - seatH - 8);
+    const seatPad = 5;
     return (
       <div
         style={{ position: "absolute", left: table.x, top: table.y, zIndex: isSelected ? 2 : 1,
-          width: box, height: box, borderRadius: 28,
+          width: boxW, height: boxH, borderRadius: 28,
           border: `2px solid ${isSelected ? "#3b82f6" : "transparent"}`, boxSizing: "border-box", cursor: "grab" }}
         onMouseDown={e => { if (!(e.target as HTMLElement).closest("[data-seat]")) onStartTableDrag(e); }}
         onDragOver={e => { if (draggingId) onTableAreaDragOver(e); }}
         onDrop={onTableAreaDrop}
       >
         {/* Superficie del tavolo (disco centrale) */}
-        <div style={{ position: "absolute", left: c - discD / 2, top: c - discD / 2, width: discD, height: discD,
+        <div style={{ position: "absolute", left: cx - discD / 2, top: cy - discD / 2, width: discD, height: discD,
           borderRadius: "50%", background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }} />
-        {/* Sedie disposte in cerchio */}
+        {/* Sedie disposte in cerchio. I posti vuoti stanno in un container bianco
+            con leggero padding, così si vedono sul canvas grigio. */}
         {ring.map((pid, i) => {
           const ang = -Math.PI / 2 + (i * 2 * Math.PI) / N;
-          const sx = c + radius * Math.cos(ang) - seatW / 2;
-          const sy = c + radius * Math.sin(ang) - seatH / 2;
+          const sx = cx + radius * Math.cos(ang) - seatW / 2;
+          const sy = cy + radius * Math.sin(ang) - seatH / 2;
           return (
-            <div key={i} style={{ position: "absolute", left: sx, top: sy }}>
-              {renderSeat("top", pid, i, { w: seatW, h: seatH })}
+            <div key={i} style={{ position: "absolute", left: pid ? sx : sx - seatPad, top: pid ? sy : sy - seatPad }}>
+              {pid
+                ? renderSeat("top", pid, i, { w: seatW, h: seatH })
+                : <div style={{ background: "#fff", borderRadius: 14, padding: seatPad, boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }}>
+                    {renderSeat("top", pid, i, { w: seatW, h: seatH })}
+                  </div>}
             </div>
           );
         })}
@@ -645,8 +655,8 @@ function TableCard({
         {ring.map((_, i) => {
           const afterIdx = i + 1;
           const mid = -Math.PI / 2 + ((i + 0.5) * 2 * Math.PI) / N;
-          const gx = c + radius * Math.cos(mid);
-          const gy = c + radius * Math.sin(mid);
+          const gx = cx + radius * Math.cos(mid);
+          const gy = cy + radius * Math.sin(mid);
           const key = `G|${table.id}|top|${afterIdx}`;
           const showInsert = dragOverKey === key && isDragging;
           const HZ = 36;
