@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, AArrowDown, AArrowUp, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus } from "lucide-react";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
 // Figma. Ricreata inline perché non presente in questa versione di lucide. ──────
@@ -125,6 +125,13 @@ const DEFAULT_TAG_DEFS: TagDef[] = [
 const TAG_PALETTE = ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6", "#6366f1"];
 
 const SHAPE_PALETTE = ["#64748b","#d97706","#16a34a","#2563eb","#db2777","#9333ea","#dc2626"];
+// Taglie di testo predefinite per le zone (label mostrata nella select).
+const ZONE_TEXT_SIZES = [
+  { label: "S", value: 14 },
+  { label: "M", value: 20 },
+  { label: "L", value: 28 },
+  { label: "XL", value: 40 },
+];
 
 const COLORS = [
   "#7ae8ea", "#f8baff", "#ffcaba", "#7aea85",
@@ -742,33 +749,33 @@ function TableChrome({
       {/* Contro-scala per dimensione costante a ogni zoom; ancorato sopra il frame */}
       <div style={{ position: "absolute", left: 0, bottom: "100%", transformOrigin: "left bottom", transform: `scale(${1 / zoom})`, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, paddingBottom: 6, pointerEvents: "auto" }}>
         {isSelected && (
-          <div className="flex items-center gap-1 bg-white rounded-xl shadow-lg border border-gray-200 px-1.5 h-9" onMouseDown={e => e.stopPropagation()}>
-            <span className="text-[11px] text-gray-400 font-medium px-1 tabular-nums">{occupied}/{total}</span>
-            <div className="w-px h-4 bg-gray-200" />
+          <div className="flex items-center gap-1.5 bg-white rounded-xl shadow-lg border border-gray-200 px-2 h-11" onMouseDown={e => e.stopPropagation()}>
+            <span className="text-xs text-gray-400 font-medium px-1 tabular-nums">{occupied}/{total}</span>
+            <div className="w-px h-5 bg-gray-200" />
             {isRound ? (
-              <div className="flex items-center gap-0.5">
-                <span className="text-[10px] text-gray-400 font-semibold px-1">Seats</span>
-                <button onClick={() => onAdjust(table.id, "top", -1)} title="Remove a seat" className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">−</button>
-                <span className="w-4 text-center text-[11px] font-bold text-gray-700">{table.topSeats.length}</span>
-                <button onClick={() => onAdjust(table.id, "top", 1)} title="Add a seat" className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">+</button>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-400 font-semibold px-1">Seats</span>
+                <button onClick={() => onAdjust(table.id, "top", -1)} title="Remove a seat" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
+                <span className="w-5 text-center text-sm font-bold text-gray-700">{table.topSeats.length}</span>
+                <button onClick={() => onAdjust(table.id, "top", 1)} title="Add a seat" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
               </div>
             ) : (
               <>
                 {(["top", "bottom"] as const).map(row => (
-                  <div key={row} className="flex items-center gap-0.5">
-                    <span className="text-[10px] text-gray-400 font-semibold w-3 text-center">{row === "top" ? "A" : "B"}</span>
-                    <button onClick={() => onAdjust(table.id, row, -1)} title={`Remove a seat from row ${row === "top" ? "A" : "B"}`} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">−</button>
-                    <span className="w-4 text-center text-[11px] font-bold text-gray-700">{row === "top" ? table.topSeats.length : table.bottomSeats.length}</span>
-                    <button onClick={() => onAdjust(table.id, row, 1)} title={`Add a seat to row ${row === "top" ? "A" : "B"}`} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">+</button>
+                  <div key={row} className="flex items-center gap-1">
+                    <span className="text-xs text-gray-400 font-semibold w-3 text-center">{row === "top" ? "A" : "B"}</span>
+                    <button onClick={() => onAdjust(table.id, row, -1)} title={`Remove a seat from row ${row === "top" ? "A" : "B"}`} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">−</button>
+                    <span className="w-5 text-center text-sm font-bold text-gray-700">{row === "top" ? table.topSeats.length : table.bottomSeats.length}</span>
+                    <button onClick={() => onAdjust(table.id, row, 1)} title={`Add a seat to row ${row === "top" ? "A" : "B"}`} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none font-bold">+</button>
                   </div>
                 ))}
-                <div className="w-px h-4 bg-gray-200" />
-                <button onClick={onFlipH} title="Flip horizontal" className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowLeftRight size={14} /></button>
-                <button onClick={onFlip} title="Flip vertical" className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowUpDown size={14} /></button>
+                <div className="w-px h-5 bg-gray-200" />
+                <button onClick={onFlipH} title="Flip horizontal" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowLeftRight size={18} /></button>
+                <button onClick={onFlip} title="Flip vertical" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowUpDown size={18} /></button>
               </>
             )}
-            <div className="w-px h-4 bg-gray-200" />
-            <button onClick={onDelete} title="Delete table" className="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={14} /></button>
+            <div className="w-px h-5 bg-gray-200" />
+            <button onClick={onDelete} title="Delete table" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={18} /></button>
           </div>
         )}
         {/* Titolo: trascina + seleziona (rename su doppio click) */}
@@ -1942,27 +1949,25 @@ export default function App() {
                 <div style={{ position: "absolute", inset: 0, border: `2px solid ${BLUE}`, borderRadius: 2, boxSizing: "border-box" }} />
 
                 {/* Pill colori (sopra la zona) */}
-                <div style={{ position: "absolute", left: "50%", top: -14, transform: "translate(-50%,-100%)", display: "flex", alignItems: "center", gap: 6, background: "white", borderRadius: 12, padding: "6px 10px", boxShadow: "0 6px 20px rgba(0,0,0,0.16)", border: "1px solid #e5e7eb", pointerEvents: "auto", whiteSpace: "nowrap" }}
+                <div style={{ position: "absolute", left: "50%", top: -14, transform: "translate(-50%,-100%)", display: "flex", alignItems: "center", gap: 7, background: "white", borderRadius: 14, padding: "7px 12px", boxShadow: "0 6px 20px rgba(0,0,0,0.16)", border: "1px solid #e5e7eb", pointerEvents: "auto", whiteSpace: "nowrap" }}
                   onMouseDown={e => e.stopPropagation()}>
                   {SHAPE_PALETTE.map(c => (
                     <button key={c} onClick={e => { e.stopPropagation(); updateShape(shape.id, { color: c }); setActiveShapeColor(c); }}
                       title="Change color"
-                      style={{ width: 18, height: 18, borderRadius: "50%", background: c, border: shape.color === c ? "2px solid #111" : "2px solid #fff", boxShadow: shape.color === c ? "0 0 0 1.5px #111" : "0 0 0 1px #e5e7eb", cursor: "pointer", flexShrink: 0, padding: 0 }} />
+                      style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: shape.color === c ? "2px solid #111" : "2px solid #fff", boxShadow: shape.color === c ? "0 0 0 1.5px #111" : "0 0 0 1px #e5e7eb", cursor: "pointer", flexShrink: 0, padding: 0 }} />
                   ))}
-                  <div style={{ width: 1, height: 18, background: "#e5e7eb", margin: "0 1px" }} />
-                  {/* Dimensione testo */}
-                  <button onClick={e => { e.stopPropagation(); updateShape(shape.id, { fontSize: Math.max(8, (shape.fontSize ?? 14) - 2) }); }} title="Decrease text size"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 6, color: "#374151", background: "none", border: "none", cursor: "pointer" }}>
-                    <AArrowDown size={18} />
-                  </button>
-                  <button onClick={e => { e.stopPropagation(); updateShape(shape.id, { fontSize: Math.min(60, (shape.fontSize ?? 14) + 2) }); }} title="Increase text size"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 6, color: "#374151", background: "none", border: "none", cursor: "pointer" }}>
-                    <AArrowUp size={18} />
-                  </button>
-                  <div style={{ width: 1, height: 18, background: "#e5e7eb", margin: "0 1px" }} />
+                  <div style={{ width: 1, height: 24, background: "#e5e7eb", margin: "0 2px" }} />
+                  {/* Dimensione testo — select con 4 taglie definite */}
+                  <select value={ZONE_TEXT_SIZES.some(s => s.value === (shape.fontSize ?? 14)) ? (shape.fontSize ?? 14) : 14}
+                    onChange={e => { e.stopPropagation(); updateShape(shape.id, { fontSize: Number(e.target.value) }); }}
+                    onMouseDown={e => e.stopPropagation()} title="Text size"
+                    style={{ height: 32, borderRadius: 9, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 14, fontWeight: 600, padding: "0 8px", cursor: "pointer" }}>
+                    {ZONE_TEXT_SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                  <div style={{ width: 1, height: 24, background: "#e5e7eb", margin: "0 2px" }} />
                   <button onClick={e => { e.stopPropagation(); deleteShape(shape.id); }} title="Delete zone"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: 6, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>
-                    <Trash2 size={15} />
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 8, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>
+                    <Trash2 size={19} />
                   </button>
                 </div>
 
