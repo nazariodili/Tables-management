@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, Square, UserPlus, Table2, Cloud, CloudOff, AArrowDown, AArrowUp, PanelLeft, PanelRight, Circle, RectangleHorizontal } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, Square, UserPlus, Table2, Cloud, CloudOff, AArrowDown, AArrowUp, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,20 +29,15 @@ const SEAT_W = 144;
 const SEAT_H = 48;
 const SEAT_GAP = 4;
 
-const TAGS = ["VIP", "Invited", "Drinks", "Vegetarian"] as const;
-const TAG_COLORS: Record<string, string> = {
-  VIP:        "#f59e0b",
-  Invited:    "#3b82f6",
-  Drinks:     "#10b981",
-  Vegetarian: "#8b5cf6",
-};
-
-const TAG_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
-  VIP:        Sparkles,
-  Invited:    Mail,
-  Drinks:     Wine,
-  Vegetarian: Leaf,
-};
+// Tag personalizzabili dall'utente (nome + colore). Gestiti in stato/localStorage.
+type TagDef = { name: string; color: string };
+const DEFAULT_TAG_DEFS: TagDef[] = [
+  { name: "VIP",        color: "#f59e0b" },
+  { name: "Family",     color: "#3b82f6" },
+  { name: "Friends",    color: "#10b981" },
+  { name: "Vegetarian", color: "#8b5cf6" },
+];
+const TAG_PALETTE = ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6", "#6366f1"];
 
 const SHAPE_PALETTE = ["#64748b","#d97706","#16a34a","#2563eb","#db2777","#9333ea","#dc2626"];
 
@@ -111,11 +106,13 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 // ─── EditPersonModal ──────────────────────────────────────────────────────────
 
-function EditPersonModal({ person, onSave, onDelete, onClose }: {
+function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageTags }: {
   person: Person;
   onSave: (name: string, color: string, tags: string[]) => void;
   onDelete: () => void;
   onClose: () => void;
+  tagDefs: TagDef[];
+  onManageTags: () => void;
 }) {
   const [name, setName] = useState(person.name);
   const [color, setColor] = useState(person.color);
@@ -149,22 +146,27 @@ function EditPersonModal({ person, onSave, onDelete, onClose }: {
           </div>
         </div>
         <div>
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tags</label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tags</label>
+            <button onClick={onManageTags} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Manage tags</button>
+          </div>
           <div className="mt-1.5 flex gap-2 flex-wrap">
-            {TAGS.map(tag => (
-              <button key={tag} onClick={() => toggle(tag)}
-                className={[
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
-                  tags.includes(tag)
-                    ? "text-white border-transparent shadow-sm"
-                    : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300",
-                ].join(" ")}
-                style={tags.includes(tag) ? { backgroundColor: TAG_COLORS[tag], borderColor: TAG_COLORS[tag] } : {}}
-              >
-                {(() => { const Icon = TAG_ICONS[tag]; return Icon ? <Icon size={12} /> : null; })()}
-                {tag}
-              </button>
-            ))}
+            {tagDefs.length === 0 && <span className="text-xs text-gray-400">No tags yet — click "Manage tags".</span>}
+            {tagDefs.map(({ name, color }) => {
+              const active = tags.includes(name);
+              return (
+                <button key={name} onClick={() => toggle(name)}
+                  className={[
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                    active ? "text-white border-transparent shadow-sm" : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300",
+                  ].join(" ")}
+                  style={active ? { backgroundColor: color, borderColor: color } : {}}
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: active ? "#fff" : color }} />
+                  {name}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="flex gap-2 pt-1">
@@ -177,6 +179,58 @@ function EditPersonModal({ person, onSave, onDelete, onClose }: {
           <button onClick={() => name.trim() && onSave(name.trim(), color, tags)} disabled={!name.trim()}
             className="flex-1 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40">
             Save
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── ManageTagsModal — CRUD dei tag (nome + colore) ───────────────────────────
+
+function ManageTagsModal({ tagDefs, onAdd, onRename, onColor, onDelete, onClose }: {
+  tagDefs: TagDef[];
+  onAdd: (name: string) => void;
+  onRename: (oldName: string, newName: string) => void;
+  onColor: (name: string, color: string) => void;
+  onDelete: (name: string) => void;
+  onClose: () => void;
+}) {
+  const [newName, setNewName] = useState("");
+  const add = () => { if (newName.trim()) { onAdd(newName); setNewName(""); } };
+  return (
+    <Modal title="Manage tags" onClose={onClose}>
+      <div className="space-y-3">
+        {tagDefs.length === 0 && <p className="text-xs text-gray-400">No tags yet. Add one below.</p>}
+        <div className="space-y-2 max-h-72 overflow-y-auto">
+          {tagDefs.map(t => (
+            <div key={t.name} className="flex items-center gap-2">
+              <div className="flex items-center gap-1 shrink-0">
+                {TAG_PALETTE.map(c => (
+                  <button key={c} onClick={() => onColor(t.name, c)} title="Color"
+                    className="w-4 h-4 rounded-full transition-transform hover:scale-110"
+                    style={{ backgroundColor: c, outline: t.color === c ? "2px solid #111" : "none", outlineOffset: 1 }} />
+                ))}
+              </div>
+              <input defaultValue={t.name} key={t.name + t.color}
+                onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) onRename(t.name, v); }}
+                onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              <button onClick={() => onDelete(t.name)} title="Delete tag"
+                className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+          <input value={newName} onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") add(); }}
+            placeholder="New tag name"
+            className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50" />
+          <button onClick={add} disabled={!newName.trim()}
+            className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 flex items-center gap-1 shrink-0">
+            <Plus size={14} /> Add
           </button>
         </div>
       </div>
@@ -295,7 +349,7 @@ function TableCard({
   onSeatDragOver, onSeatDrop, onPersonDragStart, onPersonDragEnd,
   onSeatClick, onGapDragOver, onGapDrop, onGapClick,
   onAdjust, onRemoveSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH,
-  zoom, isSelected, onSelect, willFreeOnRelease, onTableAreaDragOver, onTableAreaDrop,
+  zoom, isSelected, onSelect, willFreeOnRelease, onTableAreaDragOver, onTableAreaDrop, tagColor,
 }: {
   table: TableData;
   people: Record<string, Person>;
@@ -324,6 +378,7 @@ function TableCard({
   willFreeOnRelease: boolean;
   onTableAreaDragOver: (e: DragEvent<HTMLDivElement>) => void;
   onTableAreaDrop: (e: DragEvent<HTMLDivElement>) => void;
+  tagColor: (name: string) => string;
 }) {
   const occupied = [...table.topSeats, ...table.bottomSeats].filter(Boolean).length;
   const total = table.topSeats.length + table.bottomSeats.length;
@@ -387,16 +442,9 @@ function TableCard({
             </span>
             {person.tags && person.tags.length > 0 && (
               <div className="flex gap-1 mt-0.5">
-                {person.tags.map(tag => {
-                  const Icon = TAG_ICONS[tag];
-                  return Icon ? (
-                    <Icon key={tag} size={11} style={{
-                      color: TAG_COLORS[tag],
-                      filter: "drop-shadow(0 0 1.5px white) drop-shadow(0 0 1.5px white)",
-                      flexShrink: 0,
-                    }} />
-                  ) : null;
-                })}
+                {person.tags.map(tag => (
+                  <span key={tag} className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tagColor(tag), boxShadow: "0 0 0 1.5px white" }} />
+                ))}
               </div>
             )}
           </div>
@@ -794,12 +842,26 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [loaded, setLoaded] = useState(false);
 
+  // Tag personalizzabili
+  const [tagDefs, setTagDefs] = useState<TagDef[]>(DEFAULT_TAG_DEFS);
+  const tagColor = useCallback((name: string) => tagDefs.find(t => t.name === name)?.color ?? "#9ca3af", [tagDefs]);
+  const [tagsModalOpen, setTagsModalOpen] = useState(false);
+  // Onboarding: mostrato solo alla prima visita
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return !localStorage.getItem("tavoli_onboarded_v1"); } catch { return false; }
+  });
+  const dismissWelcome = () => {
+    try { localStorage.setItem("tavoli_onboarded_v1", "1"); } catch {}
+    setShowWelcome(false);
+  };
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   // Idratazione iniziale dal browser (localStorage) — i dati restano sul device
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const st = JSON.parse(raw) as { pages?: Page[]; people?: Record<string, Person>; currentPageId?: string };
+        const st = JSON.parse(raw) as { pages?: Page[]; people?: Record<string, Person>; currentPageId?: string; tags?: TagDef[] };
         if (Array.isArray(st.pages) && st.pages.length > 0) {
           const cur = st.currentPageId && st.pages.some(p => p.id === st.currentPageId)
             ? st.currentPageId : st.pages[0].id;
@@ -807,6 +869,7 @@ export default function App() {
           setPages(st.pages);
           setCurrentPageId(cur);
           setPeople(ppl);
+          if (Array.isArray(st.tags)) setTagDefs(st.tags);
           bumpUidPast(collectIds(st.pages, ppl));
           return;
         }
@@ -825,12 +888,71 @@ export default function App() {
     setSaveStatus("saving");
     saveTimer.current = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ pages, people, currentPageId }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ pages, people, currentPageId, tags: tagDefs }));
         setSaveStatus("saved");
       } catch (e) { console.error("[save]", e); setSaveStatus("error"); }
     }, 400);
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  }, [pages, currentPageId, people, loaded]);
+  }, [pages, currentPageId, people, tagDefs, loaded]);
+
+  // ── Import / Export JSON ────────────────────────────────────────────────────
+  const exportData = () => {
+    const blob = new Blob(
+      [JSON.stringify({ pages, people, currentPageId, tags: tagDefs, version: 1 }, null, 2)],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `seating-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+  const importData = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const st = JSON.parse(String(reader.result)) as { pages?: Page[]; people?: Record<string, Person>; currentPageId?: string; tags?: TagDef[] };
+        if (!Array.isArray(st.pages) || st.pages.length === 0) throw new Error("bad");
+        if (!window.confirm("Importing this file will replace your current data. Continue?")) return;
+        const cur = st.currentPageId && st.pages.some(p => p.id === st.currentPageId) ? st.currentPageId : st.pages[0].id;
+        const ppl = st.people ?? {};
+        setPages(st.pages); setCurrentPageId(cur); setPeople(ppl);
+        if (Array.isArray(st.tags)) setTagDefs(st.tags);
+        bumpUidPast(collectIds(st.pages, ppl));
+      } catch { window.alert("Invalid file: could not import."); }
+    };
+    reader.readAsText(file);
+  };
+
+  // ── Gestione tag (aggiungi / rinomina / colore / elimina) ───────────────────
+  const addTagDef = (name: string) => {
+    const n = name.trim();
+    if (!n || tagDefs.some(t => t.name.toLowerCase() === n.toLowerCase())) return;
+    setTagDefs(prev => [...prev, { name: n, color: TAG_PALETTE[prev.length % TAG_PALETTE.length] }]);
+  };
+  const renameTagDef = (oldName: string, newName: string) => {
+    const n = newName.trim();
+    if (!n || (n !== oldName && tagDefs.some(t => t.name.toLowerCase() === n.toLowerCase()))) return;
+    setTagDefs(prev => prev.map(t => t.name === oldName ? { ...t, name: n } : t));
+    setPeople(prev => {
+      const next: Record<string, Person> = {};
+      for (const [id, p] of Object.entries(prev))
+        next[id] = p.tags?.includes(oldName) ? { ...p, tags: p.tags.map(t => t === oldName ? n : t) } : p;
+      return next;
+    });
+  };
+  const setTagDefColor = (name: string, color: string) =>
+    setTagDefs(prev => prev.map(t => t.name === name ? { ...t, color } : t));
+  const deleteTagDef = (name: string) => {
+    setTagDefs(prev => prev.filter(t => t.name !== name));
+    setPeople(prev => {
+      const next: Record<string, Person> = {};
+      for (const [id, p] of Object.entries(prev))
+        next[id] = p.tags?.includes(name) ? { ...p, tags: p.tags.filter(t => t !== name) } : p;
+      return next;
+    });
+  };
 
   // ── Shape draw mode ───────────────────────────────────────────────────────
   const [shapeMode, setShapeMode] = useState(false);
@@ -1675,6 +1797,7 @@ export default function App() {
                 willFreeOnRelease={willFreeOnRelease}
                 onTableAreaDragOver={onTableAreaDragOver}
                 onTableAreaDrop={onTableAreaDrop}
+                tagColor={tagColor}
               />
             ))}
 
@@ -1851,6 +1974,20 @@ export default function App() {
 
               <div className="w-px h-5 bg-gray-200 mx-1" />
 
+              {/* Import / Export JSON */}
+              <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) importData(f); e.target.value = ""; }} />
+              <button onClick={() => fileInputRef.current?.click()} title="Import (JSON)"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                <Upload size={15} />
+              </button>
+              <button onClick={exportData} title="Export (JSON)"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                <Download size={15} />
+              </button>
+
+              <div className="w-px h-5 bg-gray-200 mx-1" />
+
               {/* Stato salvataggio (cloud) */}
               <div className="w-8 h-8 flex items-center justify-center"
                 title={
@@ -1936,27 +2073,27 @@ export default function App() {
               })}
             </div>}
 
-            {/* Tag counts */}
-            {sidebarOpen && Object.keys(tagCounts).length > 0 && (
-              <div className="flex gap-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
-                {TAGS.map(tag => {
-                  const count = tagCounts[tag] ?? 0;
-                  if (!count) return null;
-                  const Icon = TAG_ICONS[tag];
-                  const isActive = filter === `tag:${tag}`;
+            {/* Tag filters (dynamic) + manage */}
+            {sidebarOpen && (
+              <div className="flex gap-1.5 flex-wrap items-center" onClick={e => e.stopPropagation()}>
+                {tagDefs.map(({ name, color }) => {
+                  const count = tagCounts[name] ?? 0;
+                  const isActive = filter === `tag:${name}`;
                   return (
-                    <button key={tag}
-                      onClick={() => setFilter(isActive ? "all" : `tag:${tag}`)}
+                    <button key={name}
+                      onClick={() => setFilter(isActive ? "all" : `tag:${name}`)}
                       className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all"
-                      style={isActive
-                        ? { backgroundColor: TAG_COLORS[tag], color: "#fff" }
-                        : { backgroundColor: TAG_COLORS[tag] + "22", color: TAG_COLORS[tag] }}>
-                      {Icon && <Icon size={9} />}
-                      <span>{tag}</span>
+                      style={isActive ? { backgroundColor: color, color: "#fff" } : { backgroundColor: color + "22", color }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />
+                      <span>{name}</span>
                       <span className={isActive ? "opacity-80" : "opacity-60"}>{count}</span>
                     </button>
                   );
                 })}
+                <button onClick={() => setTagsModalOpen(true)} title="Manage tags"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                  <TagsIcon size={11} /> Manage
+                </button>
               </div>
             )}
           </div>
@@ -2004,11 +2141,10 @@ export default function App() {
                           {person.name}
                         </span>
                         {person.tags && person.tags.length > 0 && (
-                          <div className="flex gap-0.5 mt-0.5">
-                            {person.tags.map(tag => {
-                              const Icon = TAG_ICONS[tag];
-                              return Icon ? <Icon key={tag} size={9} style={{ color: TAG_COLORS[tag] }} /> : null;
-                            })}
+                          <div className="flex gap-1 mt-1">
+                            {person.tags.map(tag => (
+                              <span key={tag} className="w-2 h-2 rounded-full" style={{ backgroundColor: tagColor(tag) }} title={tag} />
+                            ))}
                           </div>
                         )}
                       </div>
@@ -2144,7 +2280,52 @@ export default function App() {
           onSave={(name, color, tags) => updatePerson(editingPersonId, name, color, tags)}
           onDelete={() => { deletePerson(editingPersonId); setEditingPersonId(null); }}
           onClose={() => setEditingPersonId(null)}
+          tagDefs={tagDefs}
+          onManageTags={() => setTagsModalOpen(true)}
         />
+      )}
+
+      {/* Manage Tags Modal */}
+      {tagsModalOpen && (
+        <ManageTagsModal
+          tagDefs={tagDefs}
+          onAdd={addTagDef}
+          onRename={renameTagDef}
+          onColor={setTagDefColor}
+          onDelete={deleteTagDef}
+          onClose={() => setTagsModalOpen(false)}
+        />
+      )}
+
+      {/* Welcome / onboarding (first visit) */}
+      {showWelcome && (
+        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={dismissWelcome}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7" onClick={e => e.stopPropagation()}>
+            <h2 className="text-xl font-bold text-gray-900">Welcome to Event Seating Planner 🎉</h2>
+            <p className="text-sm text-gray-500 mt-1.5">Plan who sits where at your event — drag guests onto tables, in seconds.</p>
+            <div className="mt-5 space-y-3">
+              {[
+                { Icon: UserPlus, c: "text-violet-600 bg-violet-50", t: "Add guests", d: "Build your guest list; give people colors and tags." },
+                { Icon: Table2, c: "text-blue-600 bg-blue-50", t: "Create tables", d: "Rectangular or round, with any number of seats." },
+                { Icon: UserCheck, c: "text-green-600 bg-green-50", t: "Drag & drop", d: "Assign, swap, reorder or remove people on the canvas." },
+                { Icon: Copy, c: "text-amber-600 bg-amber-50", t: "Pages", d: "Try multiple layouts as separate drafts." },
+                { Icon: Cloud, c: "text-teal-600 bg-teal-50", t: "Saved in your browser", d: "No account needed. Your work survives refreshes." },
+              ].map(({ Icon, c, t, d }) => (
+                <div key={t} className="flex items-start gap-3">
+                  <div className={["w-8 h-8 rounded-lg flex items-center justify-center shrink-0", c].join(" ")}><Icon size={16} /></div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-800">{t}</div>
+                    <div className="text-xs text-gray-500">{d}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={dismissWelcome}
+              className="mt-6 w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors">
+              Get started
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
