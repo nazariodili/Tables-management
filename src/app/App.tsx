@@ -822,7 +822,7 @@ function SidebarToggle({ label, side, open, onToggle, variant }: {
   variant: "header" | "floating";
 }) {
   const Icon = side === "left" ? PanelLeft : PanelRight;
-  const icon = <Icon size={variant === "floating" ? 16 : 14} className="shrink-0" />;
+  const icon = <Icon size={variant === "floating" ? 19 : 14} className="shrink-0" />;
   const text = (
     <span className={variant === "header" ? "text-sm font-medium" : "text-sm font-semibold"}>
       {label}
@@ -832,7 +832,7 @@ function SidebarToggle({ label, side, open, onToggle, variant }: {
   return (
     <button onClick={onToggle} title={open ? `Hide ${label}` : `Show ${label}`}
       className={variant === "floating"
-        ? "h-9 px-2.5 flex items-center gap-2 bg-white rounded-xl shadow-md border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+        ? "h-11 px-4 flex items-center gap-2.5 bg-white rounded-xl shadow-md border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
         : "flex items-center gap-1.5 text-gray-800 hover:text-gray-900 transition-colors min-w-0"}>
       {iconFirst ? <>{icon}{text}</> : <>{text}{icon}</>}
     </button>
