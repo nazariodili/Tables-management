@@ -31,7 +31,7 @@ function GlobalTooltip() {
   const currentEl = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const DELAY = 180;
+    const DELAY = 550;
     const clearTimer = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
     const hide = () => { clearTimer(); currentEl.current = null; setTip(null); };
 
