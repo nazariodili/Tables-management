@@ -1152,7 +1152,7 @@ export default function App() {
   // Larghezza compatta (stato chiuso) — esplicita così la transizione anima
   const PAGES_CLOSED_W = 116, GUESTS_CLOSED_W = 226;
   const [pagesWidth, setPagesWidth] = useState(176);
-  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [sidebarWidth, setSidebarWidth] = useState(368);
   const [isResizing, setIsResizing] = useState(false);
   // Menu contestuale pagine (tasto destro)
   const [pageMenu, setPageMenu] = useState<{ x: number; y: number; pageId: string } | null>(null);
