@@ -824,7 +824,7 @@ function SidebarToggle({ label, side, open, onToggle, variant }: {
   const Icon = side === "left" ? PanelLeft : PanelRight;
   const icon = <Icon size={variant === "floating" ? 16 : 14} className="shrink-0" />;
   const text = (
-    <span className={variant === "header" ? "text-sm font-normal" : "text-sm font-semibold"}>
+    <span className={variant === "header" ? "text-sm font-medium" : "text-sm font-semibold"}>
       {label}
     </span>
   );
