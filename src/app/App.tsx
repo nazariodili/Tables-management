@@ -94,7 +94,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-bold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} title="Close" className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -135,7 +135,7 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
           <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Color</label>
           <div className="mt-1.5 flex gap-2 flex-wrap">
             {COLORS.map(c => (
-              <button key={c} onClick={() => setColor(c)}
+              <button key={c} onClick={() => setColor(c)} title="Pick color"
                 className={["w-8 h-8 rounded-lg border-2 transition-all", color === c ? "border-gray-800 scale-110 shadow-md" : "border-transparent hover:scale-105"].join(" ")}
                 style={{ backgroundColor: c }}
               />
@@ -156,6 +156,7 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
               const active = tags.includes(name);
               return (
                 <button key={name} onClick={() => toggle(name)}
+                  title={active ? `Remove "${name}" tag` : `Add "${name}" tag`}
                   className={[
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
                     active ? "text-white border-transparent shadow-sm" : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300",
@@ -429,6 +430,7 @@ function TableCard({
             onDragStart={e => onPersonDragStart(e, person.id, { type: "seat", tableId: table.id, row, idx })}
             onDragEnd={onPersonDragEnd}
             onClick={e => { e.stopPropagation(); onPersonClick(person.id); }}
+            title={`${person.name} — click to edit, drag to move`}
             style={{ backgroundColor: person.color }}
             className={[
               "absolute inset-0 rounded-lg flex flex-col items-center justify-center px-1.5 overflow-hidden",
@@ -661,18 +663,18 @@ function TableChrome({
             {isRound ? (
               <div className="flex items-center gap-0.5">
                 <span className="text-[10px] text-gray-400 font-semibold px-1">Seats</span>
-                <button onClick={() => onAdjust(table.id, "top", -1)} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">−</button>
+                <button onClick={() => onAdjust(table.id, "top", -1)} title="Remove a seat" className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">−</button>
                 <span className="w-4 text-center text-[11px] font-bold text-gray-700">{table.topSeats.length}</span>
-                <button onClick={() => onAdjust(table.id, "top", 1)} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">+</button>
+                <button onClick={() => onAdjust(table.id, "top", 1)} title="Add a seat" className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">+</button>
               </div>
             ) : (
               <>
                 {(["top", "bottom"] as const).map(row => (
                   <div key={row} className="flex items-center gap-0.5">
                     <span className="text-[10px] text-gray-400 font-semibold w-3 text-center">{row === "top" ? "A" : "B"}</span>
-                    <button onClick={() => onAdjust(table.id, row, -1)} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">−</button>
+                    <button onClick={() => onAdjust(table.id, row, -1)} title={`Remove a seat from row ${row === "top" ? "A" : "B"}`} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">−</button>
                     <span className="w-4 text-center text-[11px] font-bold text-gray-700">{row === "top" ? table.topSeats.length : table.bottomSeats.length}</span>
-                    <button onClick={() => onAdjust(table.id, row, 1)} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">+</button>
+                    <button onClick={() => onAdjust(table.id, row, 1)} title={`Add a seat to row ${row === "top" ? "A" : "B"}`} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500 text-sm leading-none font-bold">+</button>
                   </div>
                 ))}
                 <div className="w-px h-4 bg-gray-200" />
@@ -1945,7 +1947,7 @@ export default function App() {
                 {shapeMode && (
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-2.5 py-2">
                     {SHAPE_PALETTE.map(c => (
-                      <button key={c} onClick={() => setActiveShapeColor(c)}
+                      <button key={c} onClick={() => setActiveShapeColor(c)} title="Zone color"
                         style={{ backgroundColor: c, width: 18, height: 18, borderRadius: "50%", border: activeShapeColor === c ? "2px solid #111" : "2px solid transparent", flexShrink: 0 }} />
                     ))}
                   </div>
@@ -2045,7 +2047,7 @@ export default function App() {
                 className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white"
               />
               {search && (
-                <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setSearch("")} title="Clear search" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   <X size={12} />
                 </button>
               )}
@@ -2060,7 +2062,7 @@ export default function App() {
               ] as const).map(({ f, label, icon: Icon, count }) => {
                 const isActive = filter === f;
                 return (
-                  <button key={f} onClick={() => setFilter(f)}
+                  <button key={f} onClick={() => setFilter(f)} title={`Show ${label.toLowerCase()} guests`}
                     className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all"
                     style={isActive
                       ? { backgroundColor: "#1f2937", color: "#fff" }
@@ -2082,6 +2084,7 @@ export default function App() {
                   return (
                     <button key={name}
                       onClick={() => setFilter(isActive ? "all" : `tag:${name}`)}
+                      title={isActive ? "Clear tag filter" : `Filter by "${name}"`}
                       className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all"
                       style={isActive ? { backgroundColor: color, color: "#fff" } : { backgroundColor: color + "22", color }}>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />
@@ -2129,6 +2132,7 @@ export default function App() {
                       onDragStart={e => { e.stopPropagation(); onListDragStart(e, person.id); }}
                       onDragEnd={onPersonDragEnd}
                       onClick={e => { e.stopPropagation(); onListPersonClick(person.id); }}
+                      title={`${person.name} — click to edit, drag onto a seat`}
                       className={[
                         "flex items-center gap-2.5 px-3 py-2 cursor-grab active:cursor-grabbing",
                         "transition-all duration-75 select-none group border-b border-gray-50 last:border-0",
@@ -2167,6 +2171,7 @@ export default function App() {
                       ) : (
                         <button
                           onClick={e => { e.stopPropagation(); deletePerson(person.id); }}
+                          title="Delete guest"
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 shrink-0"
                         >
                           <X size={11} />
@@ -2233,7 +2238,7 @@ export default function App() {
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Color</label>
               <div className="mt-1.5 flex gap-2 flex-wrap">
                 {COLORS.map(c => (
-                  <button key={c} onClick={() => setPColor(c)}
+                  <button key={c} onClick={() => setPColor(c)} title="Pick color"
                     className={["w-8 h-8 rounded-lg border-2 transition-all", pColor === c ? "border-gray-800 scale-110 shadow-md" : "border-transparent hover:scale-105"].join(" ")}
                     style={{ backgroundColor: c }}
                   />
@@ -2267,9 +2272,9 @@ export default function App() {
                 <div key={label}>
                   <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
                   <div className="mt-1.5 flex items-center gap-2 bg-gray-50 rounded-xl border border-gray-200 px-3 py-2">
-                    <button onClick={() => setVal(v => Math.max(1, v - 1))} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">−</button>
+                    <button onClick={() => setVal(v => Math.max(1, v - 1))} title="Fewer seats" className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">−</button>
                     <span className="flex-1 text-center font-bold text-gray-800">{val}</span>
-                    <button onClick={() => setVal(v => Math.min(50, v + 1))} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">+</button>
+                    <button onClick={() => setVal(v => Math.min(50, v + 1))} title="More seats" className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 font-bold text-sm">+</button>
                   </div>
                 </div>
               ))}
