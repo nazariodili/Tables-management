@@ -2149,11 +2149,11 @@ export default function App() {
                 const isActive = filter === f;
                 return (
                   <button key={f} onClick={() => setFilter(f)} title={`Show ${label.toLowerCase()} guests`}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
                     style={isActive
                       ? { backgroundColor: "#1f2937", color: "#fff" }
                       : { backgroundColor: "#1f293714", color: "#6b7280" }}>
-                    <Icon size={9} />
+                    <Icon size={12} />
                     <span>{label}</span>
                     <span className={isActive ? "opacity-70" : "opacity-50"}>{count}</span>
                   </button>
