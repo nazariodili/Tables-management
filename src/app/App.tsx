@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, Square, UserPlus, Table2, Cloud, CloudOff, AArrowDown, AArrowUp, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, Square, UserPlus, Table2, Cloud, CloudOff, AArrowDown, AArrowUp, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1911,7 +1911,7 @@ export default function App() {
                 <button onClick={() => setTableMenuOpen(v => !v)} title="Add table"
                   className={["w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
                     tableMenuOpen ? "bg-blue-100 text-blue-700" : "text-blue-600 hover:bg-blue-50"].join(" ")}>
-                  <Table2 size={17} />
+                  <SquarePlus size={17} />
                 </button>
                 {tableMenuOpen && (
                   <>
@@ -2101,9 +2101,19 @@ export default function App() {
           {/* Person list */}
           {sidebarOpen && <div className="flex-1 overflow-y-auto">
             {filteredPeople.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-300 text-xs text-center px-4 select-none">
-                <Users size={24} className="mb-2 opacity-50" />
-                <p>{search ? "Nessun risultato" : "No guests"}</p>
+              <div className="flex flex-col items-center justify-center py-12 text-center px-4 select-none">
+                <Users size={24} className="mb-2 text-gray-300" />
+                {Object.keys(people).length === 0 ? (
+                  <>
+                    <p className="text-xs text-gray-400 mb-3">Your guest list is empty.</p>
+                    <button onClick={() => setAddPersonOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 transition-colors shadow-sm">
+                      <UserPlus size={14} /> Add your first guest
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-300">{search ? "No matches" : "No guests"}</p>
+                )}
               </div>
             ) : (
               <div className="py-1">
