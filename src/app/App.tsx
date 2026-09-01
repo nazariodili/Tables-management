@@ -1324,7 +1324,11 @@ export default function App() {
       const x = Math.min(sx, ex), y = Math.min(sy, ey);
       const w = Math.abs(ex - sx), h = Math.abs(ey - sy);
       if (w >= 20 && h >= 20) {
-        setShapes(prev => [...prev, { id: uid(), x, y, w, h, label: "", color: activeShapeColorRef.current }]);
+        const id = uid();
+        setShapes(prev => [...prev, { id, x, y, w, h, label: "", color: activeShapeColorRef.current }]);
+        // Dopo aver disegnato una zona si esce dalla modalità e la si seleziona.
+        setShapeMode(false);
+        setSelectedShapeId(id);
       }
       drawPreviewRef.current = null;
       setDrawPreview(null);
