@@ -2171,17 +2171,17 @@ export default function App() {
                     <button key={name}
                       onClick={() => setFilter(isActive ? "all" : `tag:${name}`)}
                       title={isActive ? "Clear tag filter" : `Filter by "${name}"`}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
                       style={isActive ? { backgroundColor: color, color: "#fff" } : { backgroundColor: color + "22", color }}>
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />
                       <span>{name}</span>
                       <span className={isActive ? "opacity-80" : "opacity-60"}>{count}</span>
                     </button>
                   );
                 })}
                 <button onClick={() => setTagsModalOpen(true)} title="Manage tags"
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-                  <TagsIcon size={11} /> Manage
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                  <TagsIcon size={13} /> Manage
                 </button>
               </div>
             )}
