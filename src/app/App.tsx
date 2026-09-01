@@ -758,7 +758,7 @@ function TableCard({
   const cDeg = -extra; // contro-rotazione dei contenuti
 
   const rowLabel = (letter: string, vertical: boolean) => (
-    <div style={{ width: vertical ? SEAT_W : ROW_LABEL_W, height: vertical ? undefined : SEAT_H, marginBottom: vertical ? 4 : 0, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: vertical ? "center" : "flex-end", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{letter}</div>
+    <div style={{ width: vertical ? SEAT_W : ROW_LABEL_W, height: vertical ? undefined : SEAT_H, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: vertical ? "center" : "flex-end", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{letter}</div>
   );
 
   return (
