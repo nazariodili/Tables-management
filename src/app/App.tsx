@@ -2173,8 +2173,8 @@ export default function App() {
               <SidebarToggle label={`${GUESTS_LABEL} (${totalPeople})`} side="right" open={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} variant="header" />
               {sidebarOpen && (
                 <button onClick={e => { e.stopPropagation(); setAddPersonOpen(true); }} title="Add guest"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors shrink-0">
-                  <UserPlus size={15} />
+                  className="h-7 pl-2 pr-2.5 flex items-center gap-1.5 rounded-lg bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 transition-colors shrink-0">
+                  <UserPlus size={15} /> Add
                 </button>
               )}
             </div>
