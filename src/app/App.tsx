@@ -1689,10 +1689,15 @@ export default function App() {
           }
           const dt = next.find(t => t.id === to.tableId)!;
           const dstArr = to.row === "top" ? dt.topSeats : dt.bottomSeats;
-          const rowFull = !dstArr.includes(null);
           dstArr.splice(to.afterIdx, 0, personId); // lunghezza +1
-          if (!rowFull) dstArr.pop();               // se c'era un null, rimuovi l'ultimo (era null)
-          // se piena: la riga cresce di uno slot
+          // Per mantenere invariata la lunghezza consumo UN posto vuoto (null),
+          // preferendo quello subito a destra dell'inserimento (shift verso destra),
+          // altrimenti il più vicino a sinistra. Mai rimuovere una persona!
+          let nullIdx = -1;
+          for (let k = to.afterIdx + 1; k < dstArr.length; k++) { if (dstArr[k] === null) { nullIdx = k; break; } }
+          if (nullIdx === -1) for (let k = to.afterIdx - 1; k >= 0; k--) { if (dstArr[k] === null) { nullIdx = k; break; } }
+          if (nullIdx !== -1) dstArr.splice(nullIdx, 1);
+          // se non c'è alcun null (riga piena): la riga cresce di uno slot
         }
 
         return next;
