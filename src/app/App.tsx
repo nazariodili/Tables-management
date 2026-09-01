@@ -30,12 +30,15 @@ function GlobalTooltip() {
   const timer = useRef<number | null>(null);
   const currentEl = useRef<HTMLElement | null>(null);
 
+  const draggingRef = useRef(false);
+
   useEffect(() => {
     const DELAY = 550;
     const clearTimer = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
     const hide = () => { clearTimer(); currentEl.current = null; setTip(null); };
 
     const onOver = (e: globalThis.MouseEvent) => {
+      if (draggingRef.current) return;
       const el = (e.target as HTMLElement)?.closest?.("[title],[data-tip]") as HTMLElement | null;
       if (!el) return;
       // Sposta title → data-tip per disattivare il tooltip nativo.
@@ -59,13 +62,21 @@ function GlobalTooltip() {
       if (currentEl.current && related && currentEl.current.contains(related)) return;
       hide();
     };
+    const onDragStart = () => { draggingRef.current = true; hide(); };
+    const onDragEnd = () => { draggingRef.current = false; };
     document.addEventListener("mouseover", onOver, true);
     document.addEventListener("mouseout", onOut, true);
+    document.addEventListener("dragstart", onDragStart, true);
+    document.addEventListener("dragend", onDragEnd, true);
+    document.addEventListener("drop", onDragEnd, true);
     window.addEventListener("scroll", hide, true);
     window.addEventListener("wheel", hide, true);
     return () => {
       document.removeEventListener("mouseover", onOver, true);
       document.removeEventListener("mouseout", onOut, true);
+      document.removeEventListener("dragstart", onDragStart, true);
+      document.removeEventListener("dragend", onDragEnd, true);
+      document.removeEventListener("drop", onDragEnd, true);
       window.removeEventListener("scroll", hide, true);
       window.removeEventListener("wheel", hide, true);
       clearTimer();
@@ -1178,7 +1189,7 @@ export default function App() {
   // Larghezze regolabili (entro range min/max)
   const PAGES_MIN = 150, PAGES_MAX = 320;
   const GUESTS_MIN = 260, GUESTS_MAX = 520;
-  const PAGES_LABEL = "Pages", GUESTS_LABEL = "Guest list";
+  const PAGES_LABEL = "Pages", GUESTS_LABEL = "Guests";
   // Larghezza compatta (stato chiuso) — esplicita così la transizione anima
   const PAGES_CLOSED_W = 116, GUESTS_CLOSED_W = 226;
   const [pagesWidth, setPagesWidth] = useState(176);
@@ -2159,18 +2170,13 @@ export default function App() {
           {/* Sidebar header */}
           <div className={["shrink-0 px-3.5 py-3", sidebarOpen ? "space-y-2 border-b border-gray-100" : ""].join(" ")}>
             <div className="flex items-center justify-between gap-2">
-              <SidebarToggle label={GUESTS_LABEL} side="right" open={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} variant="header" />
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-xs font-bold bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 whitespace-nowrap">
-                  {totalAssigned}/{totalPeople}
-                </span>
-                {sidebarOpen && (
-                  <button onClick={e => { e.stopPropagation(); setAddPersonOpen(true); }} title="Add guest"
-                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors shrink-0">
-                    <UserPlus size={15} />
-                  </button>
-                )}
-              </div>
+              <SidebarToggle label={`${GUESTS_LABEL} (${totalPeople})`} side="right" open={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} variant="header" />
+              {sidebarOpen && (
+                <button onClick={e => { e.stopPropagation(); setAddPersonOpen(true); }} title="Add guest"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors shrink-0">
+                  <UserPlus size={15} />
+                </button>
+              )}
             </div>
 
             {/* Search */}
