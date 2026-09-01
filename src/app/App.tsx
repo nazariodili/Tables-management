@@ -111,6 +111,8 @@ type TableData = {
   // Tipo di tavolo. Assente = "rect" (default storico). Per "round" si usa la
   // sola corona di sedie in topSeats (bottomSeats vuoto).
   shape?: TableShape;
+  // Rotazione in gradi (solo tavoli rettangolari). Assente = 0.
+  rotation?: number;
 };
 type DragSrc =
   | { type: "pool" }
@@ -452,7 +454,7 @@ function TableCard({
   table, people, draggingId, dragOverKey, selected,
   onSeatDragOver, onSeatDrop, onPersonDragStart, onPersonDragEnd,
   onSeatClick, onGapDragOver, onGapDrop, onGapClick,
-  onAdjust, onRemoveSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH,
+  onAdjust, onRemoveSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH, onRotate,
   zoom, isSelected, onSelect, willFreeOnRelease, onTableAreaDragOver, onTableAreaDrop, tagColor,
 }: {
   table: TableData;
@@ -476,6 +478,7 @@ function TableCard({
   onStartTableDrag: (e: RMouseEvent<HTMLDivElement>) => void;
   onFlip: () => void;
   onFlipH: () => void;
+  onRotate: (deg: number) => void;
   zoom: number;
   isSelected: boolean;
   onSelect: () => void;
@@ -692,18 +695,43 @@ function TableCard({
     );
   }
 
+  const ROW_LABEL_W = 18;
+  const rot = table.rotation ?? 0;
+  const startRotate = (e: RMouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const cardEl = (e.currentTarget as HTMLElement).closest("[data-table-id]") as HTMLElement | null;
+    if (!cardEl) return;
+    const r = cardEl.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const move = (ev: globalThis.MouseEvent) => {
+      const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI;
+      let deg = ang - 90; // maniglia in basso: giù = 90° in atan2
+      if (ev.shiftKey) deg = Math.round(deg / 15) * 15;
+      onRotate(((deg % 360) + 360) % 360);
+    };
+    const up = () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+
   return (
     <div
-      className="bg-white rounded-2xl shadow-lg"
-      style={{ position: "absolute", left: table.x, top: table.y, zIndex: isSelected ? 2 : 1, border: `2px solid ${isSelected ? "#3b82f6" : "#e5e7eb"}`, cursor: "grab" }}
+      data-table-id={table.id}
+      className="bg-white rounded-2xl"
+      style={{ position: "absolute", left: table.x, top: table.y, zIndex: isSelected ? 2 : 1,
+        border: `2px solid ${isSelected ? "#3b82f6" : "#e5e7eb"}`, cursor: "grab",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+        transform: rot ? `rotate(${rot}deg)` : undefined, transformOrigin: "center center" }}
       onMouseDown={e => { if (!(e.target as HTMLElement).closest("[data-seat]")) onStartTableDrag(e); }}
       onDragOver={e => { if (draggingId) onTableAreaDragOver(e); }}
       onDrop={onTableAreaDrop}
     >
       <div className="p-5">
         <div style={{ display: "inline-block" }}>
-          {/* Top row with gap zones */}
+          {/* Top row (A) with gap zones */}
           <div style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ width: ROW_LABEL_W, height: SEAT_H, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} className="text-[11px] text-gray-400 font-bold">A</div>
             {renderGap("top", 0)}
             {table.topSeats.map((pid, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center" }}>
@@ -717,8 +745,9 @@ function TableCard({
           <div className="relative my-4">
           </div>
 
-          {/* Bottom row with gap zones */}
+          {/* Bottom row (B) with gap zones */}
           <div style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ width: ROW_LABEL_W, height: SEAT_H, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} className="text-[11px] text-gray-400 font-bold">B</div>
             {renderGap("bottom", 0)}
             {table.bottomSeats.map((pid, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center" }}>
@@ -730,7 +759,7 @@ function TableCard({
 
           {/* Seat numbers — aligned under each seat */}
           <div style={{ display: "flex", marginTop: 6 }}>
-            <div style={{ width: GAP_NORMAL, flexShrink: 0 }} />
+            <div style={{ width: ROW_LABEL_W + GAP_NORMAL, flexShrink: 0 }} />
             {Array.from({ length: maxCols }).map((_, i) => (
               <div key={i} style={{ display: "flex" }}>
                 <div style={{ width: SEAT_W, flexShrink: 0 }} className="text-center text-[10px] text-gray-300 font-medium">{i + 1}</div>
@@ -740,6 +769,15 @@ function TableCard({
           </div>
         </div>
       </div>
+
+      {/* Maniglia di rotazione (solo se selezionato) */}
+      {isSelected && (
+        <div style={{ position: "absolute", left: "50%", top: "100%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", pointerEvents: "none" }}>
+          <div style={{ width: 2, height: 22, background: "#3b82f6" }} />
+          <div onMouseDown={startRotate} title="Drag to rotate"
+            style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", border: "2px solid #3b82f6", cursor: "grab", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.2)" }} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1732,6 +1770,10 @@ export default function App() {
     ));
   };
 
+  const rotateTable = (tableId: string, deg: number) => {
+    setTables(prev => prev.map(t => t.id === tableId ? { ...t, rotation: deg } : t));
+  };
+
   // ── Shape management ────────────────────────────────────────────────────────
 
   const addShape = (x: number, y: number, w: number, h: number) => {
@@ -1933,6 +1975,7 @@ export default function App() {
                 onRename={name => renameTable(table.id, name)}
                 onFlip={() => flipTable(table.id)}
                 onFlipH={() => flipTableH(table.id)}
+                onRotate={deg => rotateTable(table.id, deg)}
                 onStartTableDrag={e => handleStartTableDrag(e, table.id, table.x, table.y)}
                 zoom={zoom}
                 isSelected={selectedTableId === table.id}
