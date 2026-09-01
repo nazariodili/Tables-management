@@ -1768,7 +1768,7 @@ export default function App() {
           ].join(" ")}
           style={{ width: pagesOpen ? pagesWidth : PAGES_CLOSED_W, transition: isResizing ? "none" : "width 0.18s ease" }}
         >
-          <div className={["flex items-center shrink-0 gap-2 justify-between", pagesOpen ? "px-3 py-2 border-b border-gray-100" : "px-3.5 py-3"].join(" ")}>
+          <div className={["flex items-center shrink-0 gap-2 justify-between px-3.5 py-3", pagesOpen ? "border-b border-gray-100" : ""].join(" ")}>
             <SidebarToggle label={PAGES_LABEL} side="left" open={pagesOpen} onToggle={() => setPagesOpen(v => !v)} variant="header" />
             {pagesOpen && (
               <button onClick={addPage} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors shrink-0" title="New page">
@@ -2115,7 +2115,7 @@ export default function App() {
           onClick={onPoolAreaClick}
         >
           {/* Sidebar header */}
-          <div className={["shrink-0", sidebarOpen ? "px-4 py-2.5 space-y-2 border-b border-gray-100" : "px-3.5 py-3"].join(" ")}>
+          <div className={["shrink-0 px-3.5 py-3", sidebarOpen ? "space-y-2 border-b border-gray-100" : ""].join(" ")}>
             <div className="flex items-center justify-between gap-2">
               <SidebarToggle label={GUESTS_LABEL} side="right" open={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} variant="header" />
               <span className="text-xs font-bold bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 whitespace-nowrap shrink-0">
