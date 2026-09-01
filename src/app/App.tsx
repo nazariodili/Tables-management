@@ -108,7 +108,7 @@ function GlobalTooltip() {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Person = { id: string; name: string; color: string; tags?: string[] };
+type Person = { id: string; name: string; color: string; tags?: string[]; allergies?: string; notes?: string };
 type TableShape = "rect" | "round";
 type TableData = {
   id: string;
@@ -222,7 +222,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageTags }: {
   person: Person;
-  onSave: (name: string, color: string, tags: string[]) => void;
+  onSave: (name: string, color: string, tags: string[], allergies: string, notes: string) => void;
   onDelete: () => void;
   onClose: () => void;
   tagDefs: TagDef[];
@@ -231,9 +231,12 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
   const [name, setName] = useState(person.name);
   const [color, setColor] = useState(person.color);
   const [tags, setTags] = useState<string[]>(person.tags ?? []);
+  const [allergies, setAllergies] = useState(person.allergies ?? "");
+  const [notes, setNotes] = useState(person.notes ?? "");
 
   const toggle = (tag: string) =>
     setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  const save = () => name.trim() && onSave(name.trim(), color, tags, allergies.trim(), notes.trim());
 
   return (
     <Modal title="Edit person" onClose={onClose}>
@@ -241,7 +244,7 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
         <div>
           <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Full name</label>
           <input autoFocus value={name} onChange={e => setName(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && name.trim() && onSave(name.trim(), color, tags)}
+            onKeyDown={e => e.key === "Enter" && save()}
             className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50"
           />
         </div>
@@ -254,9 +257,6 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
                 style={{ backgroundColor: c }}
               />
             ))}
-          </div>
-          <div className="mt-2 rounded-xl px-4 py-2 text-sm font-bold text-gray-900 text-center shadow-sm truncate" style={{ backgroundColor: color }}>
-            {name || "Preview"}
           </div>
         </div>
         <div>
@@ -284,6 +284,20 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
             })}
           </div>
         </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Allergies</label>
+          <input value={allergies} onChange={e => setAllergies(e.target.value)}
+            placeholder="e.g. nuts, gluten, lactose"
+            className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Notes</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+            placeholder="Any note about this guest…"
+            className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 resize-y"
+          />
+        </div>
         <div className="flex gap-2 pt-1">
           <button onClick={onDelete} className="px-3 py-2.5 rounded-xl border border-red-200 text-sm text-red-500 hover:bg-red-50 font-medium transition-colors">
             Delete
@@ -291,7 +305,7 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onManageT
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">
             Cancel
           </button>
-          <button onClick={() => name.trim() && onSave(name.trim(), color, tags)} disabled={!name.trim()}
+          <button onClick={save} disabled={!name.trim()}
             className="flex-1 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40">
             Save
           </button>
@@ -752,6 +766,7 @@ function TableCard({
 
   const ROW_LABEL_W = 24; // distanza uniforme fra le etichette d'asse (A/B, numeri) e gli slot
   const AXIS_GAP = 16; // distanza fra le due righe (0°) / colonne (90°) — uguale
+  const LABEL_H = 16; // altezza fissa della riga etichetta (per allineare i numeri in verticale)
   // Orientamento a scaloni di 90°. Per orizzontale (0/180) si usa il layout a
   // righe; per verticale (90/270) il layout a colonne. Il residuo di 180° è
   // applicato via CSS e ogni sedia/etichetta è contro-ruotata così i NOMI
@@ -762,7 +777,7 @@ function TableCard({
   const cDeg = -extra; // contro-rotazione dei contenuti
 
   const rowLabel = (letter: string, vertical: boolean) => (
-    <div style={{ width: vertical ? SEAT_W : ROW_LABEL_W, height: vertical ? undefined : SEAT_H, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: vertical ? "center" : "flex-end", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{letter}</div>
+    <div style={{ width: vertical ? SEAT_W : ROW_LABEL_W, height: vertical ? LABEL_H : SEAT_H, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: vertical ? "center" : "flex-end", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{letter}</div>
   );
 
   return (
@@ -780,35 +795,37 @@ function TableCard({
       <div className="p-5">
         {axisVertical ? (
           /* VERTICALE: due colonne (A / B), pill orizzontali impilati, numeri a sx */
-          <div style={{ display: "flex", gap: AXIS_GAP, alignItems: "flex-start" }}>
-            {(["top", "bottom"] as const).map(row => {
-              const seats = row === "top" ? table.topSeats : table.bottomSeats;
-              const withNums = row === "top"; // numeri solo da un lato (prima colonna)
-              return (
-                <div key={row} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />}
+          <div style={{ display: "flex", alignItems: "flex-start" }}>
+            {/* Numeri: una sola colonna a sinistra, copre maxCols e si allinea
+                a ogni riga (anche con discrepanza di posti fra A e B). */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginRight: 8, flexShrink: 0 }}>
+              <div style={{ height: LABEL_H }} />
+              <div style={{ height: GAP_NORMAL }} />
+              {Array.from({ length: maxCols }).map((_, i) => (
+                <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ height: SEAT_H, display: "flex", alignItems: "center", justifyContent: "flex-end", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{i + 1}</div>
+                  <div style={{ height: GAP_NORMAL }} />
+                </div>
+              ))}
+            </div>
+            {/* Colonne A / B (pill orizzontali) */}
+            <div style={{ display: "flex", gap: AXIS_GAP, alignItems: "flex-start" }}>
+              {(["top", "bottom"] as const).map(row => {
+                const seats = row === "top" ? table.topSeats : table.bottomSeats;
+                return (
+                  <div key={row} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                     {rowLabel(row === "top" ? "A" : "B", true)}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />}
                     {renderGap(row, 0, "v")}
-                  </div>
-                  {seats.map((pid, i) => (
-                    <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0, textAlign: "center", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{i + 1}</div>}
+                    {seats.map((pid, i) => (
+                      <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                         {renderSeat(row, pid, i, undefined, cDeg)}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        {withNums && <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />}
                         {renderGap(row, i + 1, "v")}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : (
           /* ORIZZONTALE: due righe (A / B) */
@@ -1957,8 +1974,8 @@ export default function App() {
     if (selected?.personId === personId) setSelected(null);
   };
 
-  const updatePerson = useCallback((personId: string, name: string, color: string, tags: string[]) => {
-    setPeople(prev => ({ ...prev, [personId]: { ...prev[personId], name, color, tags } }));
+  const updatePerson = useCallback((personId: string, name: string, color: string, tags: string[], allergies: string, notes: string) => {
+    setPeople(prev => ({ ...prev, [personId]: { ...prev[personId], name, color, tags, allergies, notes } }));
     setEditingPersonId(null);
   }, []);
 
@@ -2616,7 +2633,7 @@ export default function App() {
       {editingPersonId && people[editingPersonId] && (
         <EditPersonModal
           person={people[editingPersonId]}
-          onSave={(name, color, tags) => updatePerson(editingPersonId, name, color, tags)}
+          onSave={(name, color, tags, allergies, notes) => updatePerson(editingPersonId, name, color, tags, allergies, notes)}
           onDelete={() => { deletePerson(editingPersonId); setEditingPersonId(null); }}
           onClose={() => setEditingPersonId(null)}
           tagDefs={tagDefs}
