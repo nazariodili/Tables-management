@@ -612,12 +612,12 @@ function TableCard({
         {/* Hover: linea + pulsante "+" per inserire un posto vuoto qui */}
         {!isDragging && (
           <div className="opacity-0 group-hover/gap:opacity-100 transition-opacity" style={{ position: "absolute", inset: 0, zIndex: 16, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-            <div style={{ position: "absolute", borderRadius: 4, background: "#3b82f6", ...(horiz ? { left: "50%", top: 4, bottom: 4, width: 2, transform: "translateX(-50%)" } : { top: "50%", left: 4, right: 4, height: 2, transform: "translateY(-50%)" }) }} />
+            <div style={{ position: "absolute", zIndex: 1, borderRadius: 4, background: "#3b82f6", ...(horiz ? { left: "50%", top: 4, bottom: 4, width: 2, transform: "translateX(-50%)" } : { top: "50%", left: 4, right: 4, height: 2, transform: "translateY(-50%)" }) }} />
             <button
               onMouseDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onInsertSlot(table.id, row, afterIdx); }}
               title="Add an empty seat here"
-              style={{ pointerEvents: "auto", width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
+              style={{ position: "relative", zIndex: 2, pointerEvents: "auto", width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
               <Plus size={12} style={{ flexShrink: 0 }} />
             </button>
           </div>
@@ -757,18 +757,30 @@ function TableCard({
     >
       <div className="p-5">
         {axisVertical ? (
-          /* VERTICALE: due colonne (A / B), pill orizzontali impilati */
+          /* VERTICALE: due colonne (A / B), pill orizzontali impilati, numeri a sx */
           <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
             {(["top", "bottom"] as const).map(row => {
               const seats = row === "top" ? table.topSeats : table.bottomSeats;
               return (
-                <div key={row} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  {rowLabel(row === "top" ? "A" : "B", true)}
-                  {renderGap(row, 0, "v")}
+                <div key={row} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />
+                    {rowLabel(row === "top" ? "A" : "B", true)}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />
+                    {renderGap(row, 0, "v")}
+                  </div>
                   {seats.map((pid, i) => (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                      {renderSeat(row, pid, i, undefined, cDeg)}
-                      {renderGap(row, i + 1, "v")}
+                    <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ width: ROW_LABEL_W, flexShrink: 0, textAlign: "center", transform: cDeg ? `rotate(${cDeg}deg)` : undefined }} className="text-[10px] text-gray-300 font-medium">{i + 1}</div>
+                        {renderSeat(row, pid, i, undefined, cDeg)}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ width: ROW_LABEL_W, flexShrink: 0 }} />
+                        {renderGap(row, i + 1, "v")}
+                      </div>
                     </div>
                   ))}
                 </div>
