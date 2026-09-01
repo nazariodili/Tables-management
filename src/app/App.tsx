@@ -2005,7 +2005,7 @@ export default function App() {
             <div className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-gray-200 px-2.5 h-16">
               {/* Add table — menu tipo (rettangolare / rotondo) */}
               <div className="relative">
-                <button onClick={() => setTableMenuOpen(v => !v)} title="Add table"
+                <button onClick={() => { setShapeMode(false); setTableMenuOpen(v => !v); }} title="Add table"
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     tableMenuOpen ? "bg-blue-100 text-blue-700" : "text-blue-600 hover:bg-blue-50"].join(" ")}>
                   <SquarePlus size={24} />
@@ -2027,7 +2027,7 @@ export default function App() {
                 )}
               </div>
               {/* Add person */}
-              <button onClick={() => setAddPersonOpen(true)} title="Add person"
+              <button onClick={() => { setShapeMode(false); setAddPersonOpen(true); }} title="Add person"
                 className="w-12 h-12 flex items-center justify-center rounded-xl text-violet-600 hover:bg-violet-50 transition-colors">
                 <UserPlus size={24} />
               </button>
