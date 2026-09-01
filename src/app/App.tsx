@@ -1068,7 +1068,7 @@ export default function App() {
   selectedTableIdRef.current = selectedTableId;
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setShapeMode(false); setTableMenuOpen(false); setSelectedShapeId(null); setSelectedTableId(null); setEditingShapeId(null); setPageMenu(null); return; }
+      if (e.key === "Escape") { setShapeMode(false); setTableMenuOpen(false); setAddPersonOpen(false); setAddTableOpen(false); setEditingPersonId(null); setTagsModalOpen(false); setSelectedShapeId(null); setSelectedTableId(null); setEditingShapeId(null); setPageMenu(null); return; }
       if ((e.key === "Delete" || e.key === "Backspace") && !(e.target as HTMLElement).closest("input,textarea")) {
         if (selectedShapeIdRef.current) {
           setShapes(prev => prev.filter(s => s.id !== selectedShapeIdRef.current));
