@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCw } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare } from "lucide-react";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
 // Figma. Ricreata inline perché non presente in questa versione di lucide. ──────
@@ -709,8 +709,8 @@ function TableCard({
           const showInsert = dragOverKey === key && isDragging;
           const HZ = 36;
           return (
-            <div key={`g${i}`}
-              style={{ position: "absolute", left: gx - HZ / 2, top: gy - HZ / 2, width: HZ, height: HZ, zIndex: 8, pointerEvents: isDragging ? "auto" : "none" }}
+            <div key={`g${i}`} className="group/gap"
+              style={{ position: "absolute", left: gx - HZ / 2, top: gy - HZ / 2, width: HZ, height: HZ, zIndex: 8, pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}
               onDragOver={e => onGapDragOver(e, key)}
               onDrop={e => onGapDrop(e, table.id, "top", afterIdx)}
             >
@@ -721,6 +721,16 @@ function TableCard({
                   borderRadius: 4, background: "linear-gradient(180deg,#3b82f6,#6366f1)",
                   boxShadow: "0 0 8px 2px rgba(99,102,241,0.5)",
                 }} />
+              )}
+              {!isDragging && (
+                <button
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); onInsertSlot(table.id, "top", afterIdx); }}
+                  title="Add an empty seat here"
+                  className="opacity-0 group-hover/gap:opacity-100 transition-opacity"
+                  style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", background: "#3b82f6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.3)", cursor: "pointer" }}>
+                  <Plus size={12} style={{ flexShrink: 0 }} />
+                </button>
               )}
             </div>
           );
@@ -902,7 +912,7 @@ function TableChrome({
                 {/* Rotazione: unico pulsante che alterna orizzontale (0°) / verticale (90°) */}
                 <button onClick={() => onRotate(deg === 90 ? 0 : 90)} title={deg === 90 ? "Make horizontal" : "Make vertical"}
                   className={["w-8 h-8 flex items-center justify-center rounded-lg transition-colors", deg === 90 ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:text-blue-500 hover:bg-blue-50"].join(" ")}>
-                  <RotateCw size={17} />
+                  {deg === 90 ? <RotateCcwSquare size={17} /> : <RotateCwSquare size={17} />}
                 </button>
               </>
             )}
