@@ -1762,6 +1762,16 @@ export default function App() {
   const isDraggingFromSeat = isDragging && dragInfo?.src.type === "seat";
   const willFreeOnRelease  = isDraggingFromSeat && dragOverKey === null;
 
+  // Comportamento uniforme della toolbar (modello "Add table"): se un tool è
+  // già attivo, il primo click su un'altra azione lo deseleziona soltanto;
+  // serve un secondo click (a tool spenti) per attivare la nuova azione.
+  const anyToolActive = shapeMode || tableMenuOpen;
+  const clearTools = () => { setShapeMode(false); setTableMenuOpen(false); };
+  const toolAction = (isSelf: boolean, run: () => void) => {
+    if (anyToolActive && !isSelf) { clearTools(); return; }
+    run();
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-50 font-[Inter,sans-serif] overflow-hidden">
       <GlobalTooltip />
@@ -2005,7 +2015,7 @@ export default function App() {
             <div className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-gray-200 px-2.5 h-16">
               {/* Add table — menu tipo (rettangolare / rotondo) */}
               <div className="relative">
-                <button onClick={() => { setShapeMode(false); setTableMenuOpen(v => !v); }} title="Add table"
+                <button onClick={() => toolAction(tableMenuOpen, () => setTableMenuOpen(v => !v))} title="Add table"
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     tableMenuOpen ? "bg-blue-100 text-blue-700" : "text-blue-600 hover:bg-blue-50"].join(" ")}>
                   <SquarePlus size={24} />
@@ -2027,13 +2037,13 @@ export default function App() {
                 )}
               </div>
               {/* Add person */}
-              <button onClick={() => { setShapeMode(false); setAddPersonOpen(true); }} title="Add person"
+              <button onClick={() => toolAction(false, () => setAddPersonOpen(true))} title="Add person"
                 className="w-12 h-12 flex items-center justify-center rounded-xl text-violet-600 hover:bg-violet-50 transition-colors">
                 <UserPlus size={24} />
               </button>
               {/* Zone (disegno forme) */}
               <div className="relative">
-                <button onClick={() => { setShapeMode(v => !v); setSelectedShapeId(null); setEditingShapeId(null); }} title="Draw zones"
+                <button onClick={() => toolAction(shapeMode, () => { setShapeMode(v => !v); setSelectedShapeId(null); setEditingShapeId(null); })} title="Draw zones"
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     shapeMode ? "bg-amber-500 text-white" : "text-amber-600 hover:bg-amber-50",
                   ].join(" ")}>
@@ -2074,11 +2084,11 @@ export default function App() {
               {/* Import / Export JSON */}
               <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) importData(f); e.target.value = ""; }} />
-              <button onClick={() => fileInputRef.current?.click()} title="Import (JSON)"
+              <button onClick={() => toolAction(false, () => fileInputRef.current?.click())} title="Import (JSON)"
                 className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
                 <Upload size={21} />
               </button>
-              <button onClick={exportData} title="Export (JSON)"
+              <button onClick={() => toolAction(false, exportData)} title="Export (JSON)"
                 className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
                 <Download size={21} />
               </button>
