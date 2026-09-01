@@ -822,7 +822,7 @@ function SidebarToggle({ label, side, open, onToggle, variant }: {
   variant: "header" | "floating";
 }) {
   const Icon = side === "left" ? PanelLeft : PanelRight;
-  const icon = <Icon size={variant === "floating" ? 19 : 14} className="shrink-0" />;
+  const icon = <Icon size={variant === "floating" ? 19 : (open ? 14 : 19)} className="shrink-0" />;
   const text = (
     <span className={variant === "header" ? "text-sm font-medium" : "text-sm font-semibold"}>
       {label}
@@ -1150,7 +1150,7 @@ export default function App() {
   const GUESTS_MIN = 260, GUESTS_MAX = 520;
   const PAGES_LABEL = "Pages", GUESTS_LABEL = "Guest list";
   // Larghezza compatta (stato chiuso) — esplicita così la transizione anima
-  const PAGES_CLOSED_W = 104, GUESTS_CLOSED_W = 216;
+  const PAGES_CLOSED_W = 116, GUESTS_CLOSED_W = 226;
   const [pagesWidth, setPagesWidth] = useState(176);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
@@ -1768,7 +1768,7 @@ export default function App() {
           ].join(" ")}
           style={{ width: pagesOpen ? pagesWidth : PAGES_CLOSED_W, transition: isResizing ? "none" : "width 0.18s ease" }}
         >
-          <div className={["flex items-center shrink-0 gap-2 justify-between px-3 py-2", pagesOpen ? "border-b border-gray-100" : ""].join(" ")}>
+          <div className={["flex items-center shrink-0 gap-2 justify-between", pagesOpen ? "px-3 py-2 border-b border-gray-100" : "px-3.5 py-3"].join(" ")}>
             <SidebarToggle label={PAGES_LABEL} side="left" open={pagesOpen} onToggle={() => setPagesOpen(v => !v)} variant="header" />
             {pagesOpen && (
               <button onClick={addPage} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors shrink-0" title="New page">
@@ -2115,7 +2115,7 @@ export default function App() {
           onClick={onPoolAreaClick}
         >
           {/* Sidebar header */}
-          <div className={["shrink-0 px-4 py-2.5", sidebarOpen ? "space-y-2 border-b border-gray-100" : ""].join(" ")}>
+          <div className={["shrink-0", sidebarOpen ? "px-4 py-2.5 space-y-2 border-b border-gray-100" : "px-3.5 py-3"].join(" ")}>
             <div className="flex items-center justify-between gap-2">
               <SidebarToggle label={GUESTS_LABEL} side="right" open={sidebarOpen} onToggle={() => setSidebarOpen(v => !v)} variant="header" />
               <span className="text-xs font-bold bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 whitespace-nowrap shrink-0">
