@@ -310,15 +310,16 @@ function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag,
             className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 resize-y"
           />
         </div>
-        <div className="flex gap-2 pt-1">
-          <button onClick={onDelete} className="px-3 py-2.5 rounded-xl border border-red-200 text-sm text-red-500 hover:bg-red-50 font-medium transition-colors">
+        <div className="flex items-center gap-2 pt-1">
+          <button onClick={onDelete} className="px-4 py-2.5 rounded-xl border border-red-200 text-sm text-red-500 hover:bg-red-50 font-medium transition-colors">
             Delete
           </button>
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">
             Cancel
           </button>
           <button onClick={save} disabled={!name.trim()}
-            className="flex-1 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40">
+            className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40">
             Save
           </button>
         </div>
@@ -2615,9 +2616,9 @@ export default function App() {
                 {pName || "Name preview"}
               </div>
             </div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={() => setAddPersonOpen(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
-              <button onClick={addPerson} disabled={!pName.trim()} className="flex-1 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">Add</button>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setAddPersonOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
+              <button onClick={addPerson} disabled={!pName.trim()} className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">Add</button>
             </div>
           </div>
         </Modal>
@@ -2647,9 +2648,9 @@ export default function App() {
               ))}
             </div>
             <p className="text-xs text-gray-400 text-center">Total: {tTop + tBot} seats ({tTop} + {tBot})</p>
-            <div className="flex gap-2 pt-1">
-              <button onClick={() => setAddTableOpen(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
-              <button onClick={addTable} disabled={!tName.trim()} className="flex-1 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">Add</button>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setAddTableOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
+              <button onClick={addTable} disabled={!tName.trim()} className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">Add</button>
             </div>
           </div>
         </Modal>
