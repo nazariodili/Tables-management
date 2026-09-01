@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCcw, RotateCw } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCw } from "lucide-react";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
 // Figma. Ricreata inline perché non presente in questa versione di lucide. ──────
@@ -854,7 +854,6 @@ function TableChrome({
   }, [table.id, table.topSeats.length, table.bottomSeats.length, table.shape, table.rotation, zoom]);
   const axisVertical = deg === 90 || deg === 270;
   const extra = axisVertical ? deg - 90 : deg; // 0 | 180 (residuo applicato via CSS al frame)
-  const rotate90 = (dir: 1 | -1) => onRotate((((deg + dir * 90) % 360) + 360) % 360);
   return (
     <div style={{ position: "absolute", left: table.x, top: table.y }}>
       {/* Layer di rotazione: ruota il titolo attorno al centro del frame così
@@ -888,10 +887,11 @@ function TableChrome({
                 <button onClick={onFlipH} title="Flip horizontal" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowLeftRight size={18} /></button>
                 <button onClick={onFlip} title="Flip vertical" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><ArrowUpDown size={18} /></button>
                 <div className="w-px h-5 bg-gray-200" />
-                {/* Rotazione a scaloni di 90° con gradi in diretta */}
-                <button onClick={() => rotate90(-1)} title="Rotate -90°" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><RotateCcw size={17} /></button>
-                <span className="text-xs font-semibold text-gray-500 tabular-nums w-8 text-center">{deg}°</span>
-                <button onClick={() => rotate90(1)} title="Rotate +90°" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"><RotateCw size={17} /></button>
+                {/* Rotazione: unico pulsante che alterna orizzontale (0°) / verticale (90°) */}
+                <button onClick={() => onRotate(deg === 90 ? 0 : 90)} title={deg === 90 ? "Make horizontal" : "Make vertical"}
+                  className={["w-8 h-8 flex items-center justify-center rounded-lg transition-colors", deg === 90 ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:text-blue-500 hover:bg-blue-50"].join(" ")}>
+                  <RotateCw size={17} />
+                </button>
               </>
             )}
             <div className="w-px h-5 bg-gray-200" />
