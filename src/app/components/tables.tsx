@@ -3,6 +3,7 @@ import { X, Plus, Trash2, GripVertical, ArrowUpDown, ArrowLeftRight, RotateCwSqu
 import { useT } from "../i18n";
 import { Person, TableData, DragSrc, SelectInfo, SEAT_W, SEAT_H } from "../types";
 import { InlineEditText } from "./InlineEditText";
+import { TagIcon } from "./tagIcons";
 
 // ─── TableCard ────────────────────────────────────────────────────────────────
 
@@ -11,7 +12,7 @@ export function TableCard({
   onSeatDragOver, onSeatDrop, onPersonDragStart, onPersonDragEnd,
   onSeatClick, onGapDragOver, onGapDrop, onGapClick,
   onAdjust, onRemoveSlot, onInsertSlot, onDelete, onRename, onStartTableDrag, onPersonClick, onFlip, onFlipH,
-  zoom, isSelected, onSelect, willFreeOnRelease, onTableAreaDragOver, onTableAreaDrop, tagColor,
+  zoom, isSelected, onSelect, willFreeOnRelease, onTableAreaDragOver, onTableAreaDrop, tagColor, tagIcon,
 }: {
   table: TableData;
   people: Record<string, Person>;
@@ -42,6 +43,7 @@ export function TableCard({
   onTableAreaDragOver: (e: DragEvent<HTMLDivElement>) => void;
   onTableAreaDrop: (e: DragEvent<HTMLDivElement>) => void;
   tagColor: (name: string) => string;
+  tagIcon: (name: string) => string | undefined;
 }) {
   const t = useT();
   const occupied = [...table.topSeats, ...table.bottomSeats].filter(Boolean).length;
@@ -106,10 +108,13 @@ export function TableCard({
               {person.name}
             </span>
             {person.tags && person.tags.length > 0 && (
-              <div className="flex gap-1 mt-0.5">
-                {person.tags.map(tag => (
-                  <span key={tag} className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tagColor(tag), boxShadow: "0 0 0 1.5px white" }} />
-                ))}
+              <div className="flex items-center gap-1 mt-0.5">
+                {person.tags.map(tag => {
+                  const ic = tagIcon(tag);
+                  return ic
+                    ? <TagIcon key={tag} icon={ic} size={12} style={{ color: tagColor(tag) }} />
+                    : <span key={tag} className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tagColor(tag), boxShadow: "0 0 0 1.5px white" }} />;
+                })}
               </div>
             )}
           </div>

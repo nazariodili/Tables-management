@@ -105,6 +105,7 @@ export default function App() {
   // Tag personalizzabili
   const [tagDefs, setTagDefs] = useState<TagDef[]>(DEFAULT_TAG_DEFS);
   const tagColor = useCallback((name: string) => tagDefs.find(t => t.name === name)?.color ?? "#9ca3af", [tagDefs]);
+  const tagIcon = useCallback((name: string) => tagDefs.find(t => t.name === name)?.icon, [tagDefs]);
   const [tagsModalOpen, setTagsModalOpen] = useState(false);
   // Onboarding: mostrato solo alla prima visita
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -926,6 +927,7 @@ export default function App() {
                 onTableAreaDragOver={onTableAreaDragOver}
                 onTableAreaDrop={onTableAreaDrop}
                 tagColor={tagColor}
+                tagIcon={tagIcon}
               />
             ))}
 
@@ -1327,10 +1329,13 @@ export default function App() {
                           {person.name}
                         </span>
                         {person.tags && person.tags.length > 0 && (
-                          <div className="flex gap-1 mt-1">
-                            {person.tags.map(tag => (
-                              <span key={tag} className="w-2 h-2 rounded-full" style={{ backgroundColor: tagColor(tag) }} title={tag} />
-                            ))}
+                          <div className="flex items-center gap-1 mt-1">
+                            {person.tags.map(tag => {
+                              const ic = tagIcon(tag);
+                              return ic
+                                ? <TagIcon key={tag} icon={ic} size={11} style={{ color: tagColor(tag) }} />
+                                : <span key={tag} className="w-2 h-2 rounded-full" style={{ backgroundColor: tagColor(tag) }} title={tag} />;
+                            })}
                           </div>
                         )}
                       </div>
