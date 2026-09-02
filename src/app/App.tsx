@@ -14,6 +14,7 @@ import {
 import { usePersistence } from "./hooks/usePersistence";
 import { useHistory } from "./hooks/useHistory";
 import { applyMove, DragTarget } from "./dnd";
+import { useDragAndDrop } from "./hooks/useDragAndDrop";
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -79,9 +80,26 @@ export default function App() {
   const { pushHistory, setTablesH, setShapesH, undo, redo, clearHistory, gestureSnappedRef } =
     useHistory({ pages, setPages, setTables, setShapes });
 
-  const [dragInfo, setDragInfo] = useState<{ personId: string; src: DragSrc } | null>(null);
-  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
-  const [selected, setSelected] = useState<SelectInfo | null>(null);
+  // Trova la sedia (se assegnato) di una persona — usata dal DnD.
+  const findPersonSeat = useCallback((personId: string): DragSrc | null => {
+    for (const t of tables) {
+      const ti = t.topSeats.indexOf(personId);
+      if (ti !== -1) return { type: "seat", tableId: t.id, row: "top", idx: ti };
+      const bi = t.bottomSeats.indexOf(personId);
+      if (bi !== -1) return { type: "seat", tableId: t.id, row: "bottom", idx: bi };
+    }
+    return null;
+  }, [tables]);
+
+  // ── Drag & drop (assegna/scambia/riordina/rimuovi + click-to-move) ──────────
+  const {
+    dragInfo, dragOverKey, selected, setSelected, poolHighlight,
+    doMove, onPersonDragStart, onPersonDragEnd, onSeatDragOver, onSeatDrop,
+    onTableAreaDragOver, onTableAreaDrop, onGapDragOver, onGapDrop, onGapClick,
+    onListDragStart, onPoolAreaClick,
+    onPoolDragEnter, onPoolDragLeave, onPoolDragOver, onPoolDrop, onCanvasDragOver,
+    resetDrag,
+  } = useDragAndDrop({ setTablesH, findPersonSeat });
 
   // Tag personalizzabili
   const [tagDefs, setTagDefs] = useState<TagDef[]>(DEFAULT_TAG_DEFS);
@@ -217,12 +235,10 @@ export default function App() {
     setCurrentPageId(pageId);
     currentPageIdRef.current = pageId;
     clearHistory();
-    setSelected(null);
-    setDragInfo(null);
-    setDragOverKey(null);
+    resetDrag();
     setSelectedTableId(null);
     setSelectedShapeId(null);
-  }, []);
+  }, [clearHistory, resetDrag]);
 
   const addPage = useCallback(() => {
     const id = uid();
@@ -317,13 +333,6 @@ export default function App() {
   }, [pagesWidth, sidebarWidth]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ListFilter>("all");
-
-  // Pool drag counter
-  const poolEnterCount = useRef(0);
-  const [poolHighlight, setPoolHighlight] = useState(false);
-
-  // Tracks whether the current drag ended on a valid drop target
-  const dropHandled = useRef(false);
 
   // ── Canvas (zoom + pan + table drag) ──────────────────────────────────────
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -554,16 +563,6 @@ export default function App() {
     return set;
   }, [tables]);
 
-  const findPersonSeat = useCallback((personId: string): DragSrc | null => {
-    for (const t of tables) {
-      const ti = t.topSeats.indexOf(personId);
-      if (ti !== -1) return { type: "seat", tableId: t.id, row: "top", idx: ti };
-      const bi = t.bottomSeats.indexOf(personId);
-      if (bi !== -1) return { type: "seat", tableId: t.id, row: "bottom", idx: bi };
-    }
-    return null;
-  }, [tables]);
-
   const getPersonTableName = useCallback((personId: string): string | null => {
     for (const t of tables) {
       if (t.topSeats.includes(personId) || t.bottomSeats.includes(personId)) return t.name;
@@ -593,115 +592,9 @@ export default function App() {
     return counts;
   }, [people]);
 
-  // ── Move Logic ─────────────────────────────────────────────────────────────
-  // La trasformazione pura vive in dnd.ts (applyMove). Qui la si avvolge in
-  // history + reset della selezione, saltando i no-op (stessa sedia / pool→pool).
-  const doMove = useCallback((personId: string, from: DragSrc, to: DragTarget) => {
-    const sameSeat = to.type === "seat" && from.type === "seat"
-      && from.tableId === to.tableId && from.row === to.row && from.idx === to.idx;
-    const poolNoop = to.type === "pool" && from.type !== "seat";
-    if (!sameSeat && !poolNoop) setTablesH(prev => applyMove(prev, personId, from, to));
-    setSelected(null);
-  }, [setTablesH]);
-
-  // ── Drag Handlers ──────────────────────────────────────────────────────────
-
-  const onPersonDragStart = useCallback((e: DragEvent<HTMLDivElement>, personId: string, src: DragSrc) => {
-    dropHandled.current = false;
-    setDragInfo({ personId, src });
-    setSelected(null);
-    e.dataTransfer.effectAllowed = "move";
-  }, []);
-
-  const onPersonDragEnd = useCallback(() => {
-    if (!dropHandled.current && dragInfo?.src.type === "seat") {
-      const { tableId, row, idx } = dragInfo.src;
-      setTablesH(prev => prev.map(t => {
-        if (t.id !== tableId) return t;
-        const next = { ...t, topSeats: [...t.topSeats], bottomSeats: [...t.bottomSeats] };
-        if (row === "top") next.topSeats[idx] = null;
-        else next.bottomSeats[idx] = null;
-        return next;
-      }));
-    }
-    dropHandled.current = false;
-    setDragInfo(null);
-    setDragOverKey(null);
-    poolEnterCount.current = 0;
-    setPoolHighlight(false);
-  }, [dragInfo, setTablesH]);
-
-  const onSeatDragOver = useCallback((e: DragEvent<HTMLDivElement>, key: string) => {
-    e.preventDefault();
-    e.stopPropagation(); // evita che il canvas azzeri l'evidenziazione mentre siamo sul posto
-    e.dataTransfer.dropEffect = "move";
-    setDragOverKey(key);
-  }, []);
-
-  const onSeatDrop = useCallback((e: DragEvent<HTMLDivElement>, tableId: string, row: "top" | "bottom", idx: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropHandled.current = true;
-    if (dragInfo) doMove(dragInfo.personId, dragInfo.src, { type: "seat", tableId, row, idx });
-    setDragInfo(null);
-    setDragOverKey(null);
-  }, [dragInfo, doMove]);
-
-  // Area interna del tavolo (disco/spazi, non una sedia): zona "sicura".
-  // Passandovi sopra non è una rimozione; rilasciando la persona resta dov'è.
-  const onTableAreaDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverKey("__inside__");
-  }, []);
-  const onTableAreaDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropHandled.current = true; // niente rimozione: resta dov'è
-    setDragInfo(null);
-    setDragOverKey(null);
-  }, []);
-
-  const onGapDragOver = useCallback((e: DragEvent<HTMLDivElement>, key: string) => {
-    e.preventDefault();
-    e.stopPropagation(); // prevent seat dragover from stealing the key
-    e.dataTransfer.dropEffect = "move";
-    setDragOverKey(key);
-  }, []);
-
-  const onGapDrop = useCallback((e: DragEvent<HTMLDivElement>, tableId: string, row: "top" | "bottom", afterIdx: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropHandled.current = true;
-    if (dragInfo) doMove(dragInfo.personId, dragInfo.src, { type: "gap", tableId, row, afterIdx });
-    setDragInfo(null);
-    setDragOverKey(null);
-  }, [dragInfo, doMove]);
-
-  const onGapClick = useCallback((tableId: string, row: "top" | "bottom", afterIdx: number) => {
-    if (!selected) return;
-    doMove(selected.personId, selected.src, { type: "gap", tableId, row, afterIdx });
-  }, [selected, doMove]);
-
-  // ── Click-to-Move ──────────────────────────────────────────────────────────
-
-  const onSeatClick = useCallback((tableId: string, row: "top" | "bottom", idx: number) => {
-    // no-op: person click is handled by onPersonClick; empty seat click does nothing
-  }, []);
-
-  const onListPersonClick = useCallback((personId: string) => {
-    setEditingPersonId(personId);
-  }, []);
-
-  const onListDragStart = useCallback((e: DragEvent<HTMLDivElement>, personId: string) => {
-    const seat = findPersonSeat(personId);
-    onPersonDragStart(e, personId, seat ?? { type: "pool" });
-  }, [findPersonSeat, onPersonDragStart]);
-
-  const onPoolAreaClick = useCallback(() => {
-    if (selected) doMove(selected.personId, selected.src, { type: "pool" });
-  }, [selected, doMove]);
+  // Click su una sedia: no-op (l'edit persona è su onPersonClick).
+  const onSeatClick = useCallback((_tableId: string, _row: "top" | "bottom", _idx: number) => {}, []);
+  const onListPersonClick = useCallback((personId: string) => { setEditingPersonId(personId); }, []);
 
   // ── Seat Count ─────────────────────────────────────────────────────────────
 
@@ -940,7 +833,7 @@ export default function App() {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          onDragOver={e => { e.preventDefault(); setDragOverKey(null); }}
+          onDragOver={onCanvasDragOver}
         >
           {/* Transform layer */}
           <div style={{ position: "absolute", transform: `translate(${panX}px,${panY}px) scale(${zoom})`, transformOrigin: "0 0", willChange: "transform" }}>
@@ -1270,18 +1163,10 @@ export default function App() {
             poolHighlight && isDragging ? "bg-amber-50 border-amber-300" : "",
           ].join(" ")}
           style={{ width: sidebarOpen ? sidebarWidth : GUESTS_CLOSED_W, transition: isResizing ? "none" : "width 0.18s ease" }}
-          onDragEnter={() => { poolEnterCount.current++; setPoolHighlight(true); setDragOverKey("pool"); }}
-          onDragLeave={() => {
-            poolEnterCount.current--;
-            if (poolEnterCount.current <= 0) { poolEnterCount.current = 0; setPoolHighlight(false); setDragOverKey(null); }
-          }}
-          onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-          onDrop={e => {
-            e.preventDefault();
-            dropHandled.current = true;
-            if (dragInfo) doMove(dragInfo.personId, dragInfo.src, { type: "pool" });
-            poolEnterCount.current = 0; setPoolHighlight(false);
-          }}
+          onDragEnter={onPoolDragEnter}
+          onDragLeave={onPoolDragLeave}
+          onDragOver={onPoolDragOver}
+          onDrop={onPoolDrop}
           onClick={onPoolAreaClick}
         >
           {/* Sidebar header */}
