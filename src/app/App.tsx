@@ -12,6 +12,7 @@ import {
   InlineEditText, TableCard, TableChrome, PageItem, SidebarToggle, WelcomeModal,
 } from "./components";
 import { usePersistence } from "./hooks/usePersistence";
+import { useHistory } from "./hooks/useHistory";
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -73,33 +74,9 @@ export default function App() {
     }));
   }, []);
 
-  // ── History (undo/redo) — snapshot dell'INTERO stato pagine (tavoli + zone),
-  // così undo/redo copre TUTTO: spostamenti, rotazioni, aggiunta/modifica zone,
-  // sedute, ecc. ────────────────────────────────────────────────────────────
-  const tablesRef = useRef(tables);
-  tablesRef.current = tables;
-  const pagesRef = useRef(pages);
-  pagesRef.current = pages;
-  const undoStack = useRef<Page[][]>([]);
-  const redoStack = useRef<Page[][]>([]);
-
-  const pushHistory = useCallback(() => {
-    undoStack.current.push(pagesRef.current);
-    if (undoStack.current.length > 200) undoStack.current.shift();
-    redoStack.current = [];
-  }, []);
-
-  const setTablesH = useCallback((updater: TableData[] | ((prev: TableData[]) => TableData[])) => {
-    pushHistory();
-    setTables(updater);
-  }, [pushHistory, setTables]);
-
-  // Come setShapes, ma registra prima uno snapshot in history (per edit discreti
-  // delle zone: creazione, eliminazione, colore, testo, dimensione testo…).
-  const setShapesH = useCallback((updater: Shape[] | ((prev: Shape[]) => Shape[])) => {
-    pushHistory();
-    setShapes(updater);
-  }, [pushHistory, setShapes]);
+  // ── History (undo/redo) ─────────────────────────────────────────────────────
+  const { pushHistory, setTablesH, setShapesH, undo, redo, clearHistory, gestureSnappedRef } =
+    useHistory({ pages, setPages, setTables, setShapes });
 
   const [dragInfo, setDragInfo] = useState<{ personId: string; src: DragSrc } | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -223,25 +200,22 @@ export default function App() {
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key === "z" && !e.shiftKey) {
         e.preventDefault();
-        const prev = undoStack.current.pop();
-        if (prev !== undefined) { redoStack.current.push(pagesRef.current); setPages(prev); }
+        undo();
       } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
         e.preventDefault();
-        const next = redoStack.current.pop();
-        if (next !== undefined) { undoStack.current.push(pagesRef.current); setPages(next); }
+        redo();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [setTables, setShapes, setShapesH, pushHistory]);
+  }, [setTables, setShapes, setShapesH, pushHistory, undo, redo]);
 
   // ── Page CRUD ─────────────────────────────────────────────────────────────
 
   const switchPage = useCallback((pageId: string) => {
     setCurrentPageId(pageId);
     currentPageIdRef.current = pageId;
-    undoStack.current = [];
-    redoStack.current = [];
+    clearHistory();
     setSelected(null);
     setDragInfo(null);
     setDragOverKey(null);
@@ -440,10 +414,8 @@ export default function App() {
     shapeResizeRef.current = { id: shape.id, handle, mx: e.clientX, my: e.clientY, sx: shape.x, sy: shape.y, sw: shape.w, sh: shape.h };
   }, []);
 
-  // Snapshot in history al PRIMO movimento di una gesture (drag/resize di tavoli
-  // o zone), così un semplice click di selezione non crea voci di undo a vuoto.
-  const gestureSnappedRef = useRef(false);
-
+  // gestureSnappedRef (da useHistory) segna se la gesture corrente ha già fatto
+  // uno snapshot, così un semplice click di selezione non crea undo a vuoto.
   const handleMouseMove = useCallback((e: RMouseEvent<HTMLDivElement>) => {
     if ((shapeResizeRef.current || tableDragRef.current || shapeDragRef.current) && !gestureSnappedRef.current) {
       gestureSnappedRef.current = true;
