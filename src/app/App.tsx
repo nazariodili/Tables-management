@@ -15,7 +15,7 @@ import { usePersistence } from "./hooks/usePersistence";
 import { useHistory } from "./hooks/useHistory";
 import { applyMove, DragTarget } from "./dnd";
 import { useDragAndDrop } from "./hooks/useDragAndDrop";
-import { TagIcon } from "./components/tagIcons";
+import { TagIcon, TagBadge, TAG_ICON_KEYS } from "./components/tagIcons";
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -157,7 +157,11 @@ export default function App() {
   const addTagDef = (name: string) => {
     const n = name.trim();
     if (!n || tagDefs.some(t => t.name.toLowerCase() === n.toLowerCase())) return;
-    setTagDefs(prev => [...prev, { name: n, color: TAG_PALETTE[prev.length % TAG_PALETTE.length] }]);
+    setTagDefs(prev => [...prev, {
+      name: n,
+      color: TAG_PALETTE[prev.length % TAG_PALETTE.length],
+      icon: TAG_ICON_KEYS[prev.length % TAG_ICON_KEYS.length],
+    }]);
   };
   const renameTagDef = (oldName: string, newName: string) => {
     const n = newName.trim();
@@ -1259,9 +1263,7 @@ export default function App() {
                       title={isActive ? t("clearTagFilter") : t("filterBy", { name })}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
                       style={isActive ? { backgroundColor: color, color: "#fff" } : { backgroundColor: color + "22", color }}>
-                      {icon
-                        ? <TagIcon icon={icon} size={12} style={{ color: isActive ? "#fff" : color }} />
-                        : <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />}
+                      <TagIcon icon={icon} size={12} style={{ color: isActive ? "#fff" : color }} />
                       <span>{name}</span>
                       <span className={isActive ? "opacity-80" : "opacity-60"}>{count}</span>
                     </button>
@@ -1330,12 +1332,9 @@ export default function App() {
                         </span>
                         {person.tags && person.tags.length > 0 && (
                           <div className="flex items-center gap-1 mt-1">
-                            {person.tags.map(tag => {
-                              const ic = tagIcon(tag);
-                              return ic
-                                ? <TagIcon key={tag} icon={ic} size={11} style={{ color: tagColor(tag) }} />
-                                : <span key={tag} className="w-2 h-2 rounded-full" style={{ backgroundColor: tagColor(tag) }} title={tag} />;
-                            })}
+                            {person.tags.map(tag => (
+                              <TagBadge key={tag} icon={tagIcon(tag)} color={tagColor(tag)} box={16} glyph={10} />
+                            ))}
                           </div>
                         )}
                       </div>

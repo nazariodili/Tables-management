@@ -31,10 +31,10 @@ export const SEAT_H = 48;
 export const SEAT_GAP = 4;
 
 export const DEFAULT_TAG_DEFS: TagDef[] = [
-  { name: "VIP",        color: "#f59e0b" },
-  { name: "Family",     color: "#3b82f6" },
-  { name: "Friends",    color: "#10b981" },
-  { name: "Vegetarian", color: "#8b5cf6" },
+  { name: "VIP",        color: "#f59e0b", icon: "crown" },
+  { name: "Family",     color: "#3b82f6", icon: "heart" },
+  { name: "Friends",    color: "#10b981", icon: "star" },
+  { name: "Vegetarian", color: "#8b5cf6", icon: "droplet" },
 ];
 export const TAG_PALETTE = ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6", "#6366f1"];
 

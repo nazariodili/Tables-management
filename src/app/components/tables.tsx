@@ -3,7 +3,7 @@ import { X, Plus, Trash2, GripVertical, ArrowUpDown, ArrowLeftRight, RotateCwSqu
 import { useT } from "../i18n";
 import { Person, TableData, DragSrc, SelectInfo, SEAT_W, SEAT_H } from "../types";
 import { InlineEditText } from "./InlineEditText";
-import { TagIcon } from "./tagIcons";
+import { TagBadge } from "./tagIcons";
 
 // ─── TableCard ────────────────────────────────────────────────────────────────
 
@@ -109,12 +109,9 @@ export function TableCard({
             </span>
             {person.tags && person.tags.length > 0 && (
               <div className="flex items-center gap-1 mt-0.5">
-                {person.tags.map(tag => {
-                  const ic = tagIcon(tag);
-                  return ic
-                    ? <TagIcon key={tag} icon={ic} size={12} style={{ color: tagColor(tag) }} />
-                    : <span key={tag} className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tagColor(tag), boxShadow: "0 0 0 1.5px white" }} />;
-                })}
+                {person.tags.map(tag => (
+                  <TagBadge key={tag} icon={tagIcon(tag)} color={tagColor(tag)} box={17} glyph={10} />
+                ))}
               </div>
             )}
           </div>

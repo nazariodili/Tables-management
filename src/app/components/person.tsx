@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Plus, Trash2, Ban } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useT } from "../i18n";
 import { Person, TagDef, COLORS, TAG_PALETTE } from "../types";
 import { Modal } from "./Modal";
-import { TagIcon, TAG_ICON_KEYS } from "./tagIcons";
+import { TagIcon, TagBadge, TAG_ICON_KEYS } from "./tagIcons";
 
 // ─── PersonModal — stessa modale per aggiunta (vuota) e modifica (precompilata).
 // In modalità "add" non c'è il pulsante Delete e cambiano titolo/label del save. ─
@@ -80,9 +80,7 @@ export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, on
                     ].join(" ")}
                     style={active ? { backgroundColor: color, borderColor: color } : {}}
                   >
-                    {icon
-                      ? <TagIcon icon={icon} size={12} style={{ color: active ? "#fff" : color }} />
-                      : <span className="w-2 h-2 rounded-full" style={{ backgroundColor: active ? "#fff" : color }} />}
+                    <TagIcon icon={icon} size={12} style={{ color: active ? "#fff" : color }} />
                     {name}
                   </button>
                 );
@@ -145,10 +143,7 @@ export function TagEditorList({ tagDefs, onAdd, onRename, onColor, onIcon, onDel
           <div key={td.name} className="border border-gray-200 rounded-xl p-2 space-y-2">
             {/* Nome + preview + elimina */}
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                style={{ backgroundColor: td.color + "22", color: td.color }}>
-                {td.icon ? <TagIcon icon={td.icon} size={14} /> : <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: td.color }} />}
-              </div>
+              <TagBadge icon={td.icon} color={td.color} box={26} glyph={15} />
               <input defaultValue={td.name} key={td.name + td.color}
                 onBlur={e => { const v = e.target.value.trim(); if (v && v !== td.name) onRename(td.name, v); }}
                 onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
@@ -166,19 +161,13 @@ export function TagEditorList({ tagDefs, onAdd, onRename, onColor, onIcon, onDel
                   style={{ backgroundColor: c, borderColor: td.color === c ? "#111827" : "transparent" }} />
               ))}
             </div>
-            {/* Icone (la prima = nessuna) */}
+            {/* Icone (obbligatoria: sempre icona + colore) */}
             <div className="flex items-center gap-1 flex-wrap">
-              <button onClick={() => onIcon(td.name, "")} title={t("tagNoIcon")}
-                className={["w-6 h-6 rounded-md flex items-center justify-center border transition-colors",
-                  !td.icon ? "border-gray-800 text-gray-800" : "border-gray-200 text-gray-300 hover:text-gray-500"].join(" ")}>
-                <Ban size={13} />
-              </button>
               {TAG_ICON_KEYS.map(key => (
                 <button key={key} onClick={() => onIcon(td.name, key)} title={t("tagIcon")}
-                  className={["w-6 h-6 rounded-md flex items-center justify-center border transition-colors",
-                    td.icon === key ? "border-gray-800" : "border-gray-200 hover:border-gray-300"].join(" ")}
-                  style={{ color: td.icon === key ? td.color : "#9ca3af" }}>
-                  <TagIcon icon={key} size={14} />
+                  className={["rounded-lg flex items-center justify-center border p-0.5 transition-colors",
+                    td.icon === key ? "border-gray-800" : "border-transparent hover:border-gray-200"].join(" ")}>
+                  <TagBadge icon={key} color={td.color} box={22} glyph={13} />
                 </button>
               ))}
             </div>
