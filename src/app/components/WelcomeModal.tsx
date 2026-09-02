@@ -1,5 +1,6 @@
-import { UserPlus, RectangleHorizontal, GripVertical, Copy, Cloud } from "lucide-react";
+import { UserPlus, SquarePlus, GripVertical, Copy, Cloud } from "lucide-react";
 import { useT } from "../i18n";
+import { VectorSquare } from "./icons";
 
 // ─── WelcomeModal — onboarding alla prima visita ──────────────────────────────
 export function WelcomeModal({ onDismiss }: { onDismiss: () => void }) {
@@ -12,9 +13,10 @@ export function WelcomeModal({ onDismiss }: { onDismiss: () => void }) {
         <div className="mt-5 space-y-3">
           {[
             { Icon: UserPlus, c: "text-violet-600 bg-violet-50", title: t("obGuestsT"), d: t("obGuestsD") },
-            { Icon: RectangleHorizontal, c: "text-blue-600 bg-blue-50", title: t("obTablesT"), d: t("obTablesD") },
+            { Icon: SquarePlus, c: "text-blue-600 bg-blue-50", title: t("obTablesT"), d: t("obTablesD") },
+            { Icon: VectorSquare, c: "text-amber-600 bg-amber-50", title: t("obZonesT"), d: t("obZonesD") },
             { Icon: GripVertical, c: "text-green-600 bg-green-50", title: t("obDndT"), d: t("obDndD") },
-            { Icon: Copy, c: "text-amber-600 bg-amber-50", title: t("obPagesT"), d: t("obPagesD") },
+            { Icon: Copy, c: "text-rose-600 bg-rose-50", title: t("obPagesT"), d: t("obPagesD") },
             { Icon: Cloud, c: "text-teal-600 bg-teal-50", title: t("obSavedT"), d: t("obSavedD") },
           ].map(({ Icon, c, title, d }) => (
             <div key={title} className="flex items-start gap-3">
