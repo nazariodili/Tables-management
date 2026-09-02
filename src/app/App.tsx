@@ -4,13 +4,14 @@ import { useT, useI18n, LANGS } from "./i18n";
 import {
   Person, TableData, DragSrc, Shape, Page, TagDef, ListFilter,
   SEAT_W, SEAT_H, DEFAULT_TAG_DEFS, TAG_PALETTE, SHAPE_PALETTE, ZONE_TEXT_SIZES, COLORS,
-  STORAGE_KEY, MASTER_PEOPLE, DEFAULT_TAGS, DEFAULT_CUSTOM_PEOPLE, makeFreshTables, DEFAULT_TABLES,
+  MASTER_PEOPLE, DEFAULT_TAGS, DEFAULT_CUSTOM_PEOPLE, makeFreshTables, DEFAULT_TABLES,
   uid, bumpUidPast, collectIds, normalizeStr,
 } from "./types";
 import {
   VectorSquare, GlobalTooltip, Modal, EditPersonModal, TagEditorList, ManageTagsModal,
   InlineEditText, TableCard, TableChrome, PageItem, SidebarToggle, WelcomeModal,
 } from "./components";
+import { usePersistence } from "./hooks/usePersistence";
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -104,9 +105,6 @@ export default function App() {
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const [selected, setSelected] = useState<SelectInfo | null>(null);
 
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [loaded, setLoaded] = useState(false);
-
   // Tag personalizzabili
   const [tagDefs, setTagDefs] = useState<TagDef[]>(DEFAULT_TAG_DEFS);
   const tagColor = useCallback((name: string) => tagDefs.find(t => t.name === name)?.color ?? "#9ca3af", [tagDefs]);
@@ -121,44 +119,11 @@ export default function App() {
   };
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Idratazione iniziale dal browser (localStorage) — i dati restano sul device
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const st = JSON.parse(raw) as { pages?: Page[]; people?: Record<string, Person>; currentPageId?: string; tags?: TagDef[] };
-        if (Array.isArray(st.pages) && st.pages.length > 0) {
-          const cur = st.currentPageId && st.pages.some(p => p.id === st.currentPageId)
-            ? st.currentPageId : st.pages[0].id;
-          const ppl = st.people ?? {};
-          setPages(st.pages);
-          setCurrentPageId(cur);
-          setPeople(ppl);
-          if (Array.isArray(st.tags)) setTagDefs(st.tags);
-          bumpUidPast(collectIds(st.pages, ppl));
-          return;
-        }
-      }
-      // Nessun dato salvato: allinea il contatore ai default correnti.
-      bumpUidPast(collectIds(pages, people));
-    } catch (e) { console.warn("[load]", e); }
-    finally { setLoaded(true); }
-  }, []);
-
-  // Salvataggio su localStorage a ogni modifica (debounced)
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!loaded) return;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    setSaveStatus("saving");
-    saveTimer.current = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ pages, people, currentPageId, tags: tagDefs }));
-        setSaveStatus("saved");
-      } catch (e) { console.error("[save]", e); setSaveStatus("error"); }
-    }, 400);
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  }, [pages, currentPageId, people, tagDefs, loaded]);
+  // Persistenza (localStorage): idratazione iniziale + salvataggio debounced.
+  const { saveStatus, loaded } = usePersistence({
+    pages, people, currentPageId, tagDefs,
+    setPages, setCurrentPageId, setPeople, setTagDefs,
+  });
 
   // ── Import / Export JSON ────────────────────────────────────────────────────
   const exportData = () => {
