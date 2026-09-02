@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings, Globe } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings, Globe, RefreshCw } from "lucide-react";
 import { useT, useI18n, LANGS } from "./i18n";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
@@ -1271,6 +1271,8 @@ export default function App() {
 
   // ── Shape draw mode ───────────────────────────────────────────────────────
   const [shapeMode, setShapeMode] = useState(false);
+  const shapeModeRef = useRef(false);
+  shapeModeRef.current = shapeMode;
   const [activeShapeColor, setActiveShapeColor] = useState(SHAPE_PALETTE[0]);
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -1502,6 +1504,7 @@ export default function App() {
 
   const handleStartTableDrag = useCallback((e: RMouseEvent<HTMLDivElement>, tableId: string, tx: number, ty: number) => {
     e.stopPropagation();
+    if (shapeModeRef.current) setShapeMode(false); // un click su un tavolo esce da Draw zones
     setSelectedTableId(tableId);
     setSelectedShapeId(null);
     tableDragRef.current = { id: tableId, mx: e.clientX, my: e.clientY, tx, ty };
@@ -1510,6 +1513,7 @@ export default function App() {
 
   const handleShapeMouseDown = useCallback((e: RMouseEvent<HTMLDivElement>, shape: Shape) => {
     e.stopPropagation();
+    if (shapeModeRef.current) setShapeMode(false); // un click su una zona esce da Draw zones
     setSelectedTableId(null);
     setSelectedShapeId(shape.id);
     shapeDragRef.current = { id: shape.id, mx: e.clientX, my: e.clientY, sx: shape.x, sy: shape.y };
@@ -2359,17 +2363,25 @@ export default function App() {
               <input ref={fileInputRef} type="file" accept="application/json,.json" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) importData(f); e.target.value = ""; }} />
 
-              {/* Stato salvataggio (cloud) */}
-              <div className="w-12 h-12 flex items-center justify-center"
+              {/* Stato salvataggio: cloud + badge di stato (due icone) */}
+              <div className="w-12 h-12 flex items-center justify-center relative"
                 title={
                   saveStatus === "saving" ? t("saving") :
                   saveStatus === "error"  ? t("saveError") : t("saved")
                 }>
-                {saveStatus === "error"
-                  ? <CloudOff size={23} className="text-red-500" />
-                  : <Cloud size={23} className={
-                      saveStatus === "saving" ? "text-gray-400 animate-pulse" : "text-green-500"
-                    } />}
+                {saveStatus === "error" ? (
+                  <CloudOff size={23} className="text-red-500" />
+                ) : (
+                  <>
+                    <Cloud size={23} className={saveStatus === "saving" ? "text-gray-400" : "text-green-500"} />
+                    <span className="absolute bottom-1.5 right-2 rounded-full bg-white flex items-center justify-center"
+                      style={{ width: 13, height: 13 }}>
+                      {saveStatus === "saving"
+                        ? <RefreshCw size={10} className="text-blue-500 animate-spin" />
+                        : <Check size={10} className="text-green-600" strokeWidth={3} />}
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="w-px h-7 bg-gray-200 mx-1.5" />
