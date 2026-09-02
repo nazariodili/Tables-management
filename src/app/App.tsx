@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings, Globe } from "lucide-react";
 import { useT, useI18n, LANGS } from "./i18n";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
@@ -1631,6 +1631,8 @@ export default function App() {
   const [addTableOpen, setAddTableOpen] = useState(false);
   const [tableMenuOpen, setTableMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [langSubOpen, setLangSubOpen] = useState(false);
+  const curLang = LANGS.find(l => l.code === lang) ?? LANGS[0];
   const [tName, setTName] = useState("Table 2");
   const [tTop, setTTop] = useState(8);
   const [tBot, setTBot] = useState(8);
@@ -2373,14 +2375,14 @@ export default function App() {
 
               {/* Menu impostazioni: import / export / lingua */}
               <div className="relative">
-                <button onClick={() => setSettingsOpen(v => !v)} title={t("settings")}
+                <button onClick={() => { setSettingsOpen(v => !v); setLangSubOpen(false); }} title={t("settings")}
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     settingsOpen ? "bg-gray-100 text-gray-700" : "hover:bg-gray-100 text-gray-500"].join(" ")}>
                   <Settings size={22} />
                 </button>
                 {settingsOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
+                    <div className="fixed inset-0 z-40" onClick={() => { setSettingsOpen(false); setLangSubOpen(false); }} />
                     <div className="absolute bottom-full mb-2 right-0 z-50 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[190px]">
                       <button onClick={() => { setSettingsOpen(false); toolAction(false, () => fileInputRef.current?.click()); }}
                         className="w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
@@ -2391,15 +2393,29 @@ export default function App() {
                         <Download size={16} className="text-gray-500" /> {t("exportJson")}
                       </button>
                       <div className="my-1 border-t border-gray-100" />
-                      <div className="px-3 pt-1 pb-1 text-[11px] uppercase tracking-wide text-gray-400 font-semibold">{t("language")}</div>
-                      {LANGS.map(l => (
-                        <button key={l.code} onClick={() => { setLang(l.code); setSettingsOpen(false); }}
-                          className={["w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm hover:bg-gray-100 transition-colors",
-                            l.code === lang ? "text-blue-600 font-semibold" : "text-gray-700"].join(" ")}>
-                          <span className="text-lg leading-none" aria-hidden>{l.flag}</span> {l.label}
-                          {l.code === lang && <Check size={14} className="ml-auto text-blue-600" />}
+                      {/* Lingua: voce primaria che apre un sotto-menu con le lingue */}
+                      <div className="relative">
+                        <button onClick={() => setLangSubOpen(v => !v)}
+                          className="w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                          <Globe size={16} className="text-gray-500" /> {t("language")}
+                          <span className="ml-auto flex items-center gap-1 text-gray-400">
+                            <span className="text-base leading-none" aria-hidden>{curLang.flag}</span>
+                            <ChevronRight size={14} className={langSubOpen ? "rotate-90 transition-transform" : "transition-transform"} />
+                          </span>
                         </button>
-                      ))}
+                        {langSubOpen && (
+                          <div className="absolute right-full bottom-0 mr-1 z-50 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[168px]">
+                            {LANGS.map(l => (
+                              <button key={l.code} onClick={() => { setLang(l.code); setLangSubOpen(false); setSettingsOpen(false); }}
+                                className={["w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm hover:bg-gray-100 transition-colors",
+                                  l.code === lang ? "text-blue-600 font-semibold" : "text-gray-700"].join(" ")}>
+                                <span className="text-lg leading-none" aria-hidden>{l.flag}</span> {l.label}
+                                {l.code === lang && <Check size={14} className="ml-auto text-blue-600" />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}
