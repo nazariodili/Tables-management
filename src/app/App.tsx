@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronRight, Copy, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings, Globe, RefreshCw } from "lucide-react";
+import React, { useState, useEffect, useRef, useMemo, useCallback, DragEvent, MouseEvent as RMouseEvent } from "react";
+import { Plus, Trash2, X, Check, Search, Users, UserCheck, CircleDashed, ZoomIn, ZoomOut, Maximize2, ChevronRight, Copy, UserPlus, Cloud, CloudOff, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, Settings, Globe, RefreshCw } from "lucide-react";
 import { useT, useI18n, LANGS } from "./i18n";
 import {
-  Person, TableShape, TableData, DragSrc, SelectInfo, Shape, Page, TagDef, ListFilter,
-  SEAT_W, SEAT_H, SEAT_GAP, DEFAULT_TAG_DEFS, TAG_PALETTE, SHAPE_PALETTE, ZONE_TEXT_SIZES, COLORS,
+  Person, TableData, DragSrc, Shape, Page, TagDef, ListFilter,
+  SEAT_W, SEAT_H, DEFAULT_TAG_DEFS, TAG_PALETTE, SHAPE_PALETTE, ZONE_TEXT_SIZES, COLORS,
   STORAGE_KEY, MASTER_PEOPLE, DEFAULT_TAGS, DEFAULT_CUSTOM_PEOPLE, makeFreshTables, DEFAULT_TABLES,
   uid, bumpUidPast, collectIds, normalizeStr,
 } from "./types";
 import {
   VectorSquare, GlobalTooltip, Modal, EditPersonModal, TagEditorList, ManageTagsModal,
-  InlineEditText, TableCard, TableChrome, PageItem, SidebarToggle,
+  InlineEditText, TableCard, TableChrome, PageItem, SidebarToggle, WelcomeModal,
 } from "./components";
 
 // ─── App ──────────────────────────────────────────────────────────────────────
@@ -1708,35 +1708,7 @@ export default function App() {
       )}
 
       {/* Welcome / onboarding (first visit) */}
-      {showWelcome && (
-        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={dismissWelcome}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-gray-900">{t("welcomeTitle")}</h2>
-            <p className="text-sm text-gray-500 mt-1.5">{t("welcomeSub")}</p>
-            <div className="mt-5 space-y-3">
-              {[
-                { Icon: UserPlus, c: "text-violet-600 bg-violet-50", title: t("obGuestsT"), d: t("obGuestsD") },
-                { Icon: Table2, c: "text-blue-600 bg-blue-50", title: t("obTablesT"), d: t("obTablesD") },
-                { Icon: UserCheck, c: "text-green-600 bg-green-50", title: t("obDndT"), d: t("obDndD") },
-                { Icon: Copy, c: "text-amber-600 bg-amber-50", title: t("obPagesT"), d: t("obPagesD") },
-                { Icon: Cloud, c: "text-teal-600 bg-teal-50", title: t("obSavedT"), d: t("obSavedD") },
-              ].map(({ Icon, c, title, d }) => (
-                <div key={title} className="flex items-start gap-3">
-                  <div className={["w-8 h-8 rounded-lg flex items-center justify-center shrink-0", c].join(" ")}><Icon size={16} /></div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-800">{title}</div>
-                    <div className="text-xs text-gray-500">{d}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button onClick={dismissWelcome}
-              className="mt-6 w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors">
-              {t("getStarted")}
-            </button>
-          </div>
-        </div>
-      )}
+      {showWelcome && <WelcomeModal onDismiss={dismissWelcome} />}
     </div>
   );
 }
