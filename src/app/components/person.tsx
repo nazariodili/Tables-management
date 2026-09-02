@@ -138,9 +138,9 @@ export function TagEditorList({ tagDefs, onAdd, onRename, onColor, onIcon, onDel
   return (
     <div className="space-y-3">
       {tagDefs.length === 0 && <p className="text-xs text-gray-400">{t("noTagsAdd")}</p>}
-      <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5">
+      <div className="max-h-72 overflow-y-auto pr-0.5 divide-y divide-gray-100">
         {tagDefs.map(td => (
-          <div key={td.name} className="border border-gray-200 rounded-xl p-2 space-y-2">
+          <div key={td.name} className="py-3 first:pt-0 space-y-2">
             {/* Nome + preview + elimina */}
             <div className="flex items-center gap-2">
               <TagBadge icon={td.icon} color={td.color} box={26} glyph={15} />
