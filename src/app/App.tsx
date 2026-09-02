@@ -2,8 +2,8 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallba
 import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings, Globe, RefreshCw } from "lucide-react";
 import { useT, useI18n, LANGS } from "./i18n";
 
-// ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
-// Figma. Ricreata inline perché non presente in questa versione di lucide. ──────
+// ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli.
+// Ricreata inline perché non presente in questa versione di lucide. ──────────────
 function VectorSquare({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1638,6 +1638,20 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [langSubOpen, setLangSubOpen] = useState(false);
   const curLang = LANGS.find(l => l.code === lang) ?? LANGS[0];
+  // Click-away per i dropdown della toolbar. Nota: i backdrop `fixed` non
+  // funzionano perché la bottom bar ha un transform (translate) che diventa il
+  // containing block dei fixed → si usa un listener globale.
+  useEffect(() => {
+    if (!tableMenuOpen && !settingsOpen) return;
+    const onDown = (e: globalThis.MouseEvent) => {
+      if ((e.target as HTMLElement)?.closest?.("[data-menu-root]")) return;
+      setTableMenuOpen(false);
+      setSettingsOpen(false);
+      setLangSubOpen(false);
+    };
+    document.addEventListener("mousedown", onDown, true);
+    return () => document.removeEventListener("mousedown", onDown, true);
+  }, [tableMenuOpen, settingsOpen]);
   const [tName, setTName] = useState("Table 2");
   const [tTop, setTTop] = useState(8);
   const [tBot, setTBot] = useState(8);
@@ -2288,19 +2302,17 @@ export default function App() {
         </div>
         {/* — Fine canvas viewport — Chrome flottante (toggle + bottom bar) sopra i pannelli */}
 
-        {/* Bottom bar (stile Figma, icone-only): logo · azioni · zoom · stato */}
+        {/* Bottom bar (icone-only): azioni · zoom · stato */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
             <div className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-gray-200 px-2.5 h-16">
               {/* Add table — menu tipo (rettangolare / rotondo) */}
-              <div className="relative">
+              <div className="relative" data-menu-root>
                 <button onClick={() => toolAction(tableMenuOpen, () => setTableMenuOpen(v => !v))} title={t("addTable")}
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     tableMenuOpen ? "bg-blue-100 text-blue-700" : "text-blue-600 hover:bg-blue-50"].join(" ")}>
                   <SquarePlus size={24} />
                 </button>
                 {tableMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setTableMenuOpen(false)} />
                     <div className="absolute bottom-full mb-2 left-0 z-50 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[190px]">
                       <button onClick={() => { createTable("rect"); setTableMenuOpen(false); }}
                         className="w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
@@ -2311,7 +2323,6 @@ export default function App() {
                         <Circle size={16} className="text-blue-500" /> {t("roundTable")}
                       </button>
                     </div>
-                  </>
                 )}
               </div>
               {/* Add person */}
@@ -2372,30 +2383,28 @@ export default function App() {
                 {saveStatus === "error" ? (
                   <CloudOff size={23} className="text-red-500" />
                 ) : (
-                  <>
+                  <div className="relative flex items-center justify-center" style={{ width: 24, height: 24 }}>
                     <Cloud size={23} className={saveStatus === "saving" ? "text-gray-400" : "text-green-500"} />
-                    <span className="absolute bottom-1.5 right-2 rounded-full bg-white flex items-center justify-center"
-                      style={{ width: 13, height: 13 }}>
+                    <span className="absolute rounded-full bg-white flex items-center justify-center"
+                      style={{ width: 12, height: 12, right: -2, bottom: 0 }}>
                       {saveStatus === "saving"
                         ? <RefreshCw size={10} className="text-blue-500 animate-spin" />
                         : <Check size={10} className="text-green-600" strokeWidth={3} />}
                     </span>
-                  </>
+                  </div>
                 )}
               </div>
 
               <div className="w-px h-7 bg-gray-200 mx-1.5" />
 
               {/* Menu impostazioni: import / export / lingua */}
-              <div className="relative">
+              <div className="relative" data-menu-root>
                 <button onClick={() => { setSettingsOpen(v => !v); setLangSubOpen(false); }} title={t("settings")}
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     settingsOpen ? "bg-gray-100 text-gray-700" : "hover:bg-gray-100 text-gray-500"].join(" ")}>
                   <Settings size={22} />
                 </button>
                 {settingsOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => { setSettingsOpen(false); setLangSubOpen(false); }} />
                     <div className="absolute bottom-full mb-2 right-0 z-50 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[190px]">
                       <button onClick={() => { setSettingsOpen(false); toolAction(false, () => fileInputRef.current?.click()); }}
                         className="w-full text-left px-3 py-2 flex items-center gap-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
@@ -2430,7 +2439,6 @@ export default function App() {
                         )}
                       </div>
                     </div>
-                  </>
                 )}
               </div>
             </div>

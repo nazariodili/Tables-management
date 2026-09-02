@@ -16,7 +16,7 @@ browser (localStorage) and survives page refreshes and browser restarts.
 - Guest list with **search**, **tags** and customizable **colors**
 - Multiple **pages / scenarios** (layout drafts), duplicable
 - Draw **zones** on the canvas with a name and color
-- Canvas with **zoom/pan**, resizable Figma-style sidebars
+- Canvas with **zoom/pan**, resizable collapsible sidebars
 - Automatic local saving
 
 ## Run locally
