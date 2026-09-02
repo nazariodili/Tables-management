@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings, Globe, RefreshCw } from "lucide-react";
+import { Plus, Trash2, X, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronRight, Copy, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, Settings, Globe, RefreshCw } from "lucide-react";
 import { useT, useI18n, LANGS } from "./i18n";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli.
@@ -2388,8 +2388,8 @@ export default function App() {
                     <span className="absolute rounded-full bg-white flex items-center justify-center"
                       style={{ width: 12, height: 12, right: -2, bottom: 0 }}>
                       {saveStatus === "saving"
-                        ? <RefreshCw size={10} className="text-blue-500 animate-spin" />
-                        : <Check size={10} className="text-green-600" strokeWidth={3} />}
+                        ? <RefreshCw size={10} className="text-blue-500 animate-spin" strokeWidth={3} />
+                        : <Check size={10} className="text-green-600" strokeWidth={4} />}
                     </span>
                   </div>
                 )}
@@ -2552,7 +2552,7 @@ export default function App() {
                   <>
                     <p className="text-xs text-gray-400 mb-3">{t("listEmpty")}</p>
                     <button onClick={() => setAddPersonOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 transition-colors shadow-sm">
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-50 hover:text-gray-800 transition-colors">
                       <UserPlus size={14} /> {t("addFirstGuest")}
                     </button>
                   </>
