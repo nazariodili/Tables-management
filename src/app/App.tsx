@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, DragEvent, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Check, Search, Users, UserCheck, CircleDashed, ZoomIn, ZoomOut, Maximize2, ChevronRight, Copy, UserPlus, Cloud, CloudOff, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, Settings, Globe, RefreshCw } from "lucide-react";
+import { Plus, Trash2, X, Check, Search, Users, UserCheck, CircleDashed, ZoomIn, ZoomOut, Maximize2, ChevronRight, Copy, UserPlus, Cloud, CloudOff, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, Settings, Globe, RefreshCw, ArrowDown } from "lucide-react";
 import { useT, useI18n, LANGS } from "./i18n";
 import {
   Person, TableData, DragSrc, Shape, Page, TagDef, ListFilter,
-  SEAT_W, SEAT_H, DEFAULT_TAG_DEFS, TAG_PALETTE, SHAPE_PALETTE, ZONE_TEXT_SIZES, COLORS,
+  DEFAULT_TAG_DEFS, TAG_PALETTE, SHAPE_PALETTE, ZONE_TEXT_SIZES, COLORS,
   MASTER_PEOPLE, DEFAULT_TAGS, DEFAULT_CUSTOM_PEOPLE, makeFreshTables, DEFAULT_TABLES,
   uid, bumpUidPast, collectIds, normalizeStr,
 } from "./types";
@@ -491,34 +491,50 @@ export default function App() {
     setIsDraggingTable(false);
   }, [setShapesH]);
 
+  // Adatta la vista all'ingombro REALE dei tavoli (misurato dal DOM, quindi
+  // corretto anche per rotondi/ruotati), centrando nell'area VISIBILE (tra le due
+  // sidebar e sopra la bottom bar).
   const fitView = useCallback(() => {
     const vp = viewportRef.current;
-    if (!vp || tables.length === 0) return;
-    const vw = vp.clientWidth;
-    const vh = vp.clientHeight;
-    const PAD = 80;
+    if (!vp) return;
+    const frames = vp.querySelectorAll<HTMLElement>("[data-table-id]");
+    if (frames.length === 0) return;
+    const vpRect = vp.getBoundingClientRect();
+    const z = zoomRef.current, px = panXRef.current, py = panYRef.current;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const t of tables) {
-      const cols = Math.max(t.topSeats.length, t.bottomSeats.length);
-      const w = cols * (SEAT_W + 8) + 80;
-      const h = 260;
-      minX = Math.min(minX, t.x); minY = Math.min(minY, t.y);
-      maxX = Math.max(maxX, t.x + w); maxY = Math.max(maxY, t.y + h);
-    }
+    frames.forEach(el => {
+      const r = el.getBoundingClientRect();
+      const x0 = (r.left - vpRect.left - px) / z;
+      const y0 = (r.top - vpRect.top - py) / z;
+      const x1 = (r.right - vpRect.left - px) / z;
+      const y1 = (r.bottom - vpRect.top - py) / z;
+      minX = Math.min(minX, x0); minY = Math.min(minY, y0);
+      maxX = Math.max(maxX, x1); maxY = Math.max(maxY, y1);
+    });
     const cw = maxX - minX || 1;
     const ch = maxY - minY || 1;
-    const newZoom = Math.min(Math.max(Math.min((vw - PAD * 2) / cw, (vh - PAD * 2) / ch), 0.05), 2);
-    setPanX((vw - cw * newZoom) / 2 - minX * newZoom);
-    setPanY((vh - ch * newZoom) / 2 - minY * newZoom);
+    const vw = vp.clientWidth, vh = vp.clientHeight;
+    // Insetti per non finire dietro le sidebar / la bottom bar.
+    const leftInset  = (pagesOpen   ? pagesWidth   : PAGES_CLOSED_W)  + 16;
+    const rightInset = (sidebarOpen ? sidebarWidth : GUESTS_CLOSED_W) + 16;
+    const topPad = 56, bottomPad = 104;
+    const availW = Math.max(120, vw - leftInset - rightInset);
+    const availH = Math.max(120, vh - topPad - bottomPad);
+    const newZoom = Math.min(Math.max(Math.min(availW / cw, availH / ch), 0.05), 2);
+    setPanX(leftInset + (availW - cw * newZoom) / 2 - minX * newZoom);
+    setPanY(topPad + (availH - ch * newZoom) / 2 - minY * newZoom);
     setZoom(newZoom);
-  }, [tables]);
+  }, [pagesOpen, sidebarOpen, pagesWidth, sidebarWidth]);
 
-  // Alla prima apertura centra i tavoli nel canvas (una sola volta per sessione).
+  // Alla prima apertura adatta la vista ai tavoli (una sola volta per sessione).
+  // Doppio rAF + piccolo timeout per assicurare che i tavoli siano già dipinti
+  // (dopo l'idratazione) prima di misurarli.
   const didInitFit = useRef(false);
   useEffect(() => {
     if (!loaded || didInitFit.current) return;
     didInitFit.current = true;
-    requestAnimationFrame(() => fitView());
+    const id = setTimeout(() => requestAnimationFrame(() => fitView()), 80);
+    return () => clearTimeout(id);
   }, [loaded, fitView]);
 
   // Add person form
@@ -998,8 +1014,9 @@ export default function App() {
           {/* Empty state */}
           {tables.length === 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none select-none">
-              <p className="font-semibold">No tables</p>
-              <p className="text-sm mt-1">Click "+ Table" to add one</p>
+              <SquarePlus size={40} className="text-gray-300 mb-3" />
+              <p className="font-semibold text-gray-500">{t("noTables")}</p>
+              <p className="text-sm mt-1">{t("noTablesHint")}</p>
             </div>
           )}
 
@@ -1012,6 +1029,13 @@ export default function App() {
             <div className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-gray-200 px-2.5 h-16">
               {/* Add table — menu tipo (rettangolare / rotondo) */}
               <div className="relative" data-menu-root>
+                {/* Suggerimento: freccia verso il pulsante quando non ci sono tavoli */}
+                {tables.length === 0 && !tableMenuOpen && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 flex flex-col items-center pointer-events-none">
+                    <span className="text-[11px] font-semibold text-blue-600 whitespace-nowrap mb-0.5">{t("noTablesHint")}</span>
+                    <ArrowDown size={20} className="text-blue-500 animate-bounce" />
+                  </div>
+                )}
                 <button onClick={() => toolAction(tableMenuOpen, () => setTableMenuOpen(v => !v))} title={t("addTable")}
                   className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors",
                     tableMenuOpen ? "bg-blue-100 text-blue-700" : "text-blue-600 hover:bg-blue-50"].join(" ")}>

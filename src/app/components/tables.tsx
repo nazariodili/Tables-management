@@ -224,6 +224,7 @@ export function TableCard({
     const seatPad = 5;
     return (
       <div
+        data-table-id={table.id}
         style={{ position: "absolute", left: table.x, top: table.y, zIndex: isSelected ? 2 : 1,
           width: boxW, height: boxH, borderRadius: 28,
           border: `2px solid ${isSelected ? "#3b82f6" : "transparent"}`, boxSizing: "border-box", cursor: "grab" }}
