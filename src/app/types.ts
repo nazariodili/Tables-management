@@ -21,7 +21,7 @@ export type DragSrc =
 export type SelectInfo = { personId: string; src: DragSrc };
 export type Shape = { id: string; x: number; y: number; w: number; h: number; label: string; color: string; fontSize?: number };
 export type Page = { id: string; name: string; tables: TableData[]; shapes?: Shape[] };
-export type TagDef = { name: string; color: string };
+export type TagDef = { name: string; color: string; icon?: string };
 export type ListFilter = "all" | "free" | "assigned" | `tag:${string}`;
 
 // ─── Costanti ─────────────────────────────────────────────────────────────────

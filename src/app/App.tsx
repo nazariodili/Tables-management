@@ -15,6 +15,7 @@ import { usePersistence } from "./hooks/usePersistence";
 import { useHistory } from "./hooks/useHistory";
 import { applyMove, DragTarget } from "./dnd";
 import { useDragAndDrop } from "./hooks/useDragAndDrop";
+import { TagIcon } from "./components/tagIcons";
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -170,6 +171,8 @@ export default function App() {
   };
   const setTagDefColor = (name: string, color: string) =>
     setTagDefs(prev => prev.map(t => t.name === name ? { ...t, color } : t));
+  const setTagDefIcon = (name: string, icon: string) =>
+    setTagDefs(prev => prev.map(t => t.name === name ? { ...t, icon: icon || undefined } : t));
   const deleteTagDef = (name: string) => {
     setTagDefs(prev => prev.filter(t => t.name !== name));
     setPeople(prev => {
@@ -238,7 +241,10 @@ export default function App() {
     resetDrag();
     setSelectedTableId(null);
     setSelectedShapeId(null);
+    // Adatta la vista ai tavoli della nuova pagina (dopo il render).
+    setTimeout(() => requestAnimationFrame(() => fitViewRef.current()), 60);
   }, [clearHistory, resetDrag]);
+  const fitViewRef = useRef<() => void>(() => {});
 
   const addPage = useCallback(() => {
     const id = uid();
@@ -525,6 +531,7 @@ export default function App() {
     setPanY(topPad + (availH - ch * newZoom) / 2 - minY * newZoom);
     setZoom(newZoom);
   }, [pagesOpen, sidebarOpen, pagesWidth, sidebarWidth]);
+  fitViewRef.current = fitView;
 
   // Alla prima apertura adatta la vista ai tavoli (una sola volta per sessione).
   // Doppio rAF + piccolo timeout per assicurare che i tavoli siano già dipinti
@@ -1241,7 +1248,7 @@ export default function App() {
             {/* Tag filters (dynamic) + manage */}
             {sidebarOpen && (
               <div className="flex gap-1.5 flex-wrap items-center" onClick={e => e.stopPropagation()}>
-                {tagDefs.map(({ name, color }) => {
+                {tagDefs.map(({ name, color, icon }) => {
                   const count = tagCounts[name] ?? 0;
                   const isActive = filter === `tag:${name}`;
                   return (
@@ -1250,7 +1257,9 @@ export default function App() {
                       title={isActive ? t("clearTagFilter") : t("filterBy", { name })}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
                       style={isActive ? { backgroundColor: color, color: "#fff" } : { backgroundColor: color + "22", color }}>
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />
+                      {icon
+                        ? <TagIcon icon={icon} size={12} style={{ color: isActive ? "#fff" : color }} />
+                        : <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isActive ? "#fff" : color }} />}
                       <span>{name}</span>
                       <span className={isActive ? "opacity-80" : "opacity-60"}>{count}</span>
                     </button>
@@ -1397,6 +1406,7 @@ export default function App() {
           onAddTag={addTagDef}
           onRenameTag={renameTagDef}
           onColorTag={setTagDefColor}
+          onIconTag={setTagDefIcon}
           onDeleteTag={deleteTagDef}
         />
       )}
@@ -1444,6 +1454,7 @@ export default function App() {
           onAddTag={addTagDef}
           onRenameTag={renameTagDef}
           onColorTag={setTagDefColor}
+          onIconTag={setTagDefIcon}
           onDeleteTag={deleteTagDef}
         />
       )}
@@ -1455,6 +1466,7 @@ export default function App() {
           onAdd={addTagDef}
           onRename={renameTagDef}
           onColor={setTagDefColor}
+          onIcon={setTagDefIcon}
           onDelete={deleteTagDef}
           onClose={() => setTagsModalOpen(false)}
         />

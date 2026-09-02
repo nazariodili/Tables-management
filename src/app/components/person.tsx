@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Ban } from "lucide-react";
 import { useT } from "../i18n";
 import { Person, TagDef, COLORS, TAG_PALETTE } from "../types";
 import { Modal } from "./Modal";
+import { TagIcon, TAG_ICON_KEYS } from "./tagIcons";
 
 // ─── PersonModal — stessa modale per aggiunta (vuota) e modifica (precompilata).
 // In modalità "add" non c'è il pulsante Delete e cambiano titolo/label del save. ─
 
-export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag, onRenameTag, onColorTag, onDeleteTag, title, saveLabel }: {
+export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag, onRenameTag, onColorTag, onIconTag, onDeleteTag, title, saveLabel }: {
   person: Person;
   onSave: (name: string, color: string, tags: string[], allergies: string, notes: string) => void;
   onDelete?: () => void;
@@ -16,6 +17,7 @@ export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, on
   onAddTag: (name: string) => void;
   onRenameTag: (oldName: string, newName: string) => void;
   onColorTag: (name: string, color: string) => void;
+  onIconTag: (name: string, icon: string) => void;
   onDeleteTag: (name: string) => void;
   title?: string;
   saveLabel?: string;
@@ -62,12 +64,12 @@ export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, on
           </div>
           {managing ? (
             <div className="mt-1.5 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
-              <TagEditorList tagDefs={tagDefs} onAdd={onAddTag} onRename={onRenameTag} onColor={onColorTag} onDelete={onDeleteTag} />
+              <TagEditorList tagDefs={tagDefs} onAdd={onAddTag} onRename={onRenameTag} onColor={onColorTag} onIcon={onIconTag} onDelete={onDeleteTag} />
             </div>
           ) : (
             <div className="mt-1.5 flex gap-2 flex-wrap">
               {tagDefs.length === 0 && <span className="text-xs text-gray-400">{t("noTagsHint")}</span>}
-              {tagDefs.map(({ name, color }) => {
+              {tagDefs.map(({ name, color, icon }) => {
                 const active = tags.includes(name);
                 return (
                   <button key={name} onClick={() => toggle(name)}
@@ -78,7 +80,9 @@ export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, on
                     ].join(" ")}
                     style={active ? { backgroundColor: color, borderColor: color } : {}}
                   >
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: active ? "#fff" : color }} />
+                    {icon
+                      ? <TagIcon icon={icon} size={12} style={{ color: active ? "#fff" : color }} />
+                      : <span className="w-2 h-2 rounded-full" style={{ backgroundColor: active ? "#fff" : color }} />}
                     {name}
                   </button>
                 );
@@ -122,11 +126,12 @@ export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, on
 
 // ─── TagEditorList — lista CRUD dei tag (riusabile inline o dentro una modale) ──
 
-export function TagEditorList({ tagDefs, onAdd, onRename, onColor, onDelete }: {
+export function TagEditorList({ tagDefs, onAdd, onRename, onColor, onIcon, onDelete }: {
   tagDefs: TagDef[];
   onAdd: (name: string) => void;
   onRename: (oldName: string, newName: string) => void;
   onColor: (name: string, color: string) => void;
+  onIcon: (name: string, icon: string) => void;
   onDelete: (name: string) => void;
 }) {
   const [newName, setNewName] = useState("");
@@ -135,24 +140,48 @@ export function TagEditorList({ tagDefs, onAdd, onRename, onColor, onDelete }: {
   return (
     <div className="space-y-3">
       {tagDefs.length === 0 && <p className="text-xs text-gray-400">{t("noTagsAdd")}</p>}
-      <div className="space-y-2 max-h-56 overflow-y-auto">
+      <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5">
         {tagDefs.map(td => (
-          <div key={td.name} className="flex items-center gap-2">
-            <div className="flex items-center gap-1 shrink-0">
+          <div key={td.name} className="border border-gray-200 rounded-xl p-2 space-y-2">
+            {/* Nome + preview + elimina */}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                style={{ backgroundColor: td.color + "22", color: td.color }}>
+                {td.icon ? <TagIcon icon={td.icon} size={14} /> : <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: td.color }} />}
+              </div>
+              <input defaultValue={td.name} key={td.name + td.color}
+                onBlur={e => { const v = e.target.value.trim(); if (v && v !== td.name) onRename(td.name, v); }}
+                onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              <button onClick={() => onDelete(td.name)} title={t("deleteTag")}
+                className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                <Trash2 size={14} />
+              </button>
+            </div>
+            {/* Colori */}
+            <div className="flex items-center gap-1 flex-wrap">
               {TAG_PALETTE.map(c => (
                 <button key={c} onClick={() => onColor(td.name, c)} title={t("color")}
                   className="w-5 h-5 rounded-full border-2 box-border transition-opacity hover:opacity-70"
                   style={{ backgroundColor: c, borderColor: td.color === c ? "#111827" : "transparent" }} />
               ))}
             </div>
-            <input defaultValue={td.name} key={td.name + td.color}
-              onBlur={e => { const v = e.target.value.trim(); if (v && v !== td.name) onRename(td.name, v); }}
-              onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-              className="flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-            <button onClick={() => onDelete(td.name)} title={t("deleteTag")}
-              className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-              <Trash2 size={14} />
-            </button>
+            {/* Icone (la prima = nessuna) */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <button onClick={() => onIcon(td.name, "")} title={t("tagNoIcon")}
+                className={["w-6 h-6 rounded-md flex items-center justify-center border transition-colors",
+                  !td.icon ? "border-gray-800 text-gray-800" : "border-gray-200 text-gray-300 hover:text-gray-500"].join(" ")}>
+                <Ban size={13} />
+              </button>
+              {TAG_ICON_KEYS.map(key => (
+                <button key={key} onClick={() => onIcon(td.name, key)} title={t("tagIcon")}
+                  className={["w-6 h-6 rounded-md flex items-center justify-center border transition-colors",
+                    td.icon === key ? "border-gray-800" : "border-gray-200 hover:border-gray-300"].join(" ")}
+                  style={{ color: td.icon === key ? td.color : "#9ca3af" }}>
+                  <TagIcon icon={key} size={14} />
+                </button>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -172,18 +201,19 @@ export function TagEditorList({ tagDefs, onAdd, onRename, onColor, onDelete }: {
 
 // ─── ManageTagsModal — CRUD dei tag (nome + colore) ───────────────────────────
 
-export function ManageTagsModal({ tagDefs, onAdd, onRename, onColor, onDelete, onClose }: {
+export function ManageTagsModal({ tagDefs, onAdd, onRename, onColor, onIcon, onDelete, onClose }: {
   tagDefs: TagDef[];
   onAdd: (name: string) => void;
   onRename: (oldName: string, newName: string) => void;
   onColor: (name: string, color: string) => void;
+  onIcon: (name: string, icon: string) => void;
   onDelete: (name: string) => void;
   onClose: () => void;
 }) {
   const t = useT();
   return (
     <Modal title={t("manageTags")} onClose={onClose}>
-      <TagEditorList tagDefs={tagDefs} onAdd={onAdd} onRename={onRename} onColor={onColor} onDelete={onDelete} />
+      <TagEditorList tagDefs={tagDefs} onAdd={onAdd} onRename={onRename} onColor={onColor} onIcon={onIcon} onDelete={onDelete} />
     </Modal>
   );
 }
