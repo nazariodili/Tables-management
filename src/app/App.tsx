@@ -1573,10 +1573,11 @@ export default function App() {
       if (w >= 20 && h >= 20) {
         const id = uid();
         setShapesH(prev => [...prev, { id, x, y, w, h, label: "", color: activeShapeColorRef.current }]);
-        // Dopo aver disegnato una zona si esce dalla modalità e la si seleziona.
-        setShapeMode(false);
         setSelectedShapeId(id);
       }
+      // Fine di una gesture di disegno (anche un semplice click a vuoto):
+      // si esce sempre dalla modalità "Draw zones".
+      setShapeMode(false);
       drawPreviewRef.current = null;
       setDrawPreview(null);
     }
