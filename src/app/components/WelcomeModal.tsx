@@ -1,4 +1,4 @@
-import { UserPlus, Armchair, Move, Layers, Save } from "lucide-react";
+import { UserPlus, RectangleHorizontal, GripVertical, Copy, Cloud } from "lucide-react";
 import { useT } from "../i18n";
 
 // ─── WelcomeModal — onboarding alla prima visita ──────────────────────────────
@@ -12,10 +12,10 @@ export function WelcomeModal({ onDismiss }: { onDismiss: () => void }) {
         <div className="mt-5 space-y-3">
           {[
             { Icon: UserPlus, c: "text-violet-600 bg-violet-50", title: t("obGuestsT"), d: t("obGuestsD") },
-            { Icon: Armchair, c: "text-blue-600 bg-blue-50", title: t("obTablesT"), d: t("obTablesD") },
-            { Icon: Move, c: "text-green-600 bg-green-50", title: t("obDndT"), d: t("obDndD") },
-            { Icon: Layers, c: "text-amber-600 bg-amber-50", title: t("obPagesT"), d: t("obPagesD") },
-            { Icon: Save, c: "text-teal-600 bg-teal-50", title: t("obSavedT"), d: t("obSavedD") },
+            { Icon: RectangleHorizontal, c: "text-blue-600 bg-blue-50", title: t("obTablesT"), d: t("obTablesD") },
+            { Icon: GripVertical, c: "text-green-600 bg-green-50", title: t("obDndT"), d: t("obDndD") },
+            { Icon: Copy, c: "text-amber-600 bg-amber-50", title: t("obPagesT"), d: t("obPagesD") },
+            { Icon: Cloud, c: "text-teal-600 bg-teal-50", title: t("obSavedT"), d: t("obSavedD") },
           ].map(({ Icon, c, title, d }) => (
             <div key={title} className="flex items-start gap-3">
               <div className={["w-8 h-8 rounded-lg flex items-center justify-center shrink-0", c].join(" ")}><Icon size={16} /></div>
