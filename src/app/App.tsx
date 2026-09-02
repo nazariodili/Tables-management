@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, DragEvent, ReactNode, MouseEvent as RMouseEvent } from "react";
-import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare } from "lucide-react";
+import { Plus, Trash2, X, Pencil, Check, Search, Users, UserCheck, CircleDashed, GripVertical, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Copy, Sparkles, Mail, Wine, Leaf, ArrowUpDown, ArrowLeftRight, UserPlus, Table2, Cloud, CloudOff, PanelLeft, PanelRight, Circle, RectangleHorizontal, Download, Upload, Tags as TagsIcon, SquarePlus, RotateCwSquare, RotateCcwSquare, ChevronDown } from "lucide-react";
 import { useT, useI18n, LANGS } from "./i18n";
 
 // ─── Icona "vector-square" (zone/aree): quadrato con nodi agli angoli, stile
@@ -2385,9 +2385,10 @@ export default function App() {
               {/* Selettore lingua con bandiera */}
               <div className="relative">
                 <button onClick={() => setLangMenuOpen(v => !v)} title={t("language")}
-                  className={["w-12 h-12 flex items-center justify-center rounded-xl transition-colors text-xl leading-none",
+                  className={["h-12 px-2.5 flex items-center gap-1 rounded-xl transition-colors",
                     langMenuOpen ? "bg-gray-100" : "hover:bg-gray-100"].join(" ")}>
-                  <span aria-hidden>{curLang.flag}</span>
+                  <span aria-hidden className="text-xl leading-none">{curLang.flag}</span>
+                  <ChevronDown size={14} className={["text-gray-400 transition-transform", langMenuOpen ? "rotate-180" : ""].join(" ")} />
                 </button>
                 {langMenuOpen && (
                   <>
