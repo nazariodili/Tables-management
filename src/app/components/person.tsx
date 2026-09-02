@@ -4,18 +4,21 @@ import { useT } from "../i18n";
 import { Person, TagDef, COLORS, TAG_PALETTE } from "../types";
 import { Modal } from "./Modal";
 
-// ─── EditPersonModal ──────────────────────────────────────────────────────────
+// ─── PersonModal — stessa modale per aggiunta (vuota) e modifica (precompilata).
+// In modalità "add" non c'è il pulsante Delete e cambiano titolo/label del save. ─
 
-export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag, onRenameTag, onColorTag, onDeleteTag }: {
+export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, onAddTag, onRenameTag, onColorTag, onDeleteTag, title, saveLabel }: {
   person: Person;
   onSave: (name: string, color: string, tags: string[], allergies: string, notes: string) => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   onClose: () => void;
   tagDefs: TagDef[];
   onAddTag: (name: string) => void;
   onRenameTag: (oldName: string, newName: string) => void;
   onColorTag: (name: string, color: string) => void;
   onDeleteTag: (name: string) => void;
+  title?: string;
+  saveLabel?: string;
 }) {
   const [name, setName] = useState(person.name);
   const [color, setColor] = useState(person.color);
@@ -30,7 +33,7 @@ export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, on
   const save = () => name.trim() && onSave(name.trim(), color, tags, allergies.trim(), notes.trim());
 
   return (
-    <Modal title={t("editPerson")} onClose={onClose}>
+    <Modal title={title ?? t("editPerson")} onClose={onClose}>
       <div className="space-y-4">
         <div>
           <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("fullName")}</label>
@@ -98,16 +101,18 @@ export function EditPersonModal({ person, onSave, onDelete, onClose, tagDefs, on
           />
         </div>
         <div className="flex items-center gap-2 pt-1">
-          <button onClick={onDelete} className="px-4 py-2.5 rounded-xl border border-red-200 text-sm text-red-500 hover:bg-red-50 font-medium transition-colors">
-            {t("delete")}
-          </button>
+          {onDelete && (
+            <button onClick={onDelete} className="px-4 py-2.5 rounded-xl border border-red-200 text-sm text-red-500 hover:bg-red-50 font-medium transition-colors">
+              {t("delete")}
+            </button>
+          )}
           <div className="flex-1" />
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">
             {t("cancel")}
           </button>
           <button onClick={save} disabled={!name.trim()}
             className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40">
-            {t("save")}
+            {saveLabel ?? t("save")}
           </button>
         </div>
       </div>

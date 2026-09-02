@@ -523,8 +523,6 @@ export default function App() {
 
   // Add person form
   const [addPersonOpen, setAddPersonOpen] = useState(false);
-  const [pName, setPName] = useState("");
-  const [pColor, setPColor] = useState(COLORS[0]);
 
   // Edit person modal
   const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
@@ -724,12 +722,9 @@ export default function App() {
 
   // ── Person Management ──────────────────────────────────────────────────────
 
-  const addPerson = () => {
-    if (!pName.trim()) return;
+  const addPerson = (name: string, color: string, tags: string[], allergies: string, notes: string) => {
     const id = uid();
-    setPeople(prev => ({ ...prev, [id]: { id, name: pName.trim(), color: pColor } }));
-    setPName("");
-    setPColor(COLORS[0]);
+    setPeople(prev => ({ ...prev, [id]: { id, name, color, tags, allergies, notes } }));
     setAddPersonOpen(false);
   };
 
@@ -1366,34 +1361,20 @@ export default function App() {
         </>
       )}
 
-      {/* Add Person Modal */}
+      {/* Add Person Modal — stessa modale di Edit person, in modalità "add" (vuota) */}
       {addPersonOpen && (
-        <Modal title={t("addToList")} onClose={() => setAddPersonOpen(false)}>
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("fullName")}</label>
-              <input autoFocus value={pName} onChange={e => setPName(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && addPerson()}
-                className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("color")}</label>
-              <div className="mt-1.5 flex gap-2 flex-wrap">
-                {COLORS.map(c => (
-                  <button key={c} onClick={() => setPColor(c)} title={t("pickColor")}
-                    className={["w-8 h-8 rounded-lg border-2 transition-all", pColor === c ? "border-gray-800 scale-110 shadow-md" : "border-transparent hover:scale-105"].join(" ")}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => setAddPersonOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 font-medium">{t("cancel")}</button>
-              <button onClick={addPerson} disabled={!pName.trim()} className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed">{t("add")}</button>
-            </div>
-          </div>
-        </Modal>
+        <EditPersonModal
+          person={{ id: "", name: "", color: COLORS[0], tags: [], allergies: "", notes: "" }}
+          title={t("addToList")}
+          saveLabel={t("add")}
+          onSave={(name, color, tags, allergies, notes) => addPerson(name, color, tags, allergies, notes)}
+          onClose={() => setAddPersonOpen(false)}
+          tagDefs={tagDefs}
+          onAddTag={addTagDef}
+          onRenameTag={renameTagDef}
+          onColorTag={setTagDefColor}
+          onDeleteTag={deleteTagDef}
+        />
       )}
 
       {/* Add Table Modal */}
