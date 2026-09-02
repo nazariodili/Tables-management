@@ -559,6 +559,7 @@ export default function App() {
   const [addTableOpen, setAddTableOpen] = useState(false);
   const [tableMenuOpen, setTableMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [zoomEditing, setZoomEditing] = useState(false);
   const [langSubOpen, setLangSubOpen] = useState(false);
   const curLang = LANGS.find(l => l.code === lang) ?? LANGS[0];
   // Click-away per i dropdown della toolbar. Nota: i backdrop `fixed` non
@@ -788,6 +789,20 @@ export default function App() {
   // Comportamento uniforme della toolbar (modello "Add table"): se un tool è
   // già attivo, il primo click su un'altra azione lo deseleziona soltanto;
   // serve un secondo click (a tool spenti) per attivare la nuova azione.
+  // Imposta lo zoom mantenendo fisso il centro del viewport.
+  const setZoomCentered = (nz: number) => {
+    const vp = viewportRef.current; if (!vp) return;
+    const z = Math.min(Math.max(nz, 0.08), 4);
+    const cx = vp.clientWidth / 2, cy = vp.clientHeight / 2;
+    const cxc = (cx - panX) / zoom, cyc = (cy - panY) / zoom;
+    setPanX(cx - cxc * z); setPanY(cy - cyc * z); setZoom(z);
+  };
+  const commitZoomInput = (raw: string) => {
+    const n = parseInt(raw, 10);
+    if (!isNaN(n) && n > 0) setZoomCentered(n / 100);
+    setZoomEditing(false);
+  };
+
   const anyToolActive = shapeMode || tableMenuOpen;
   const clearTools = () => { setShapeMode(false); setTableMenuOpen(false); };
   const toolAction = (isSelf: boolean, run: () => void) => {
@@ -1097,10 +1112,21 @@ export default function App() {
                 className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title={t("zoomOut")}>
                 <ZoomOut size={21} />
               </button>
-              <button onClick={() => { setZoom(1); setPanX(60); setPanY(60); }}
-                className="px-1.5 text-sm font-mono font-semibold text-gray-600 hover:text-gray-900 min-w-[3.25rem] text-center transition-colors" title={t("resetZoom")}>
-                {Math.round(zoom * 100)}%
-              </button>
+              {zoomEditing ? (
+                <input autoFocus type="number" defaultValue={Math.round(zoom * 100)}
+                  onBlur={e => commitZoomInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") commitZoomInput((e.target as HTMLInputElement).value);
+                    else if (e.key === "Escape") setZoomEditing(false);
+                  }}
+                  className="w-14 px-1 py-1 text-sm font-mono font-semibold text-gray-800 text-center border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              ) : (
+                <button onClick={() => setZoomEditing(true)}
+                  className="px-1.5 text-sm font-mono font-semibold text-gray-600 hover:text-gray-900 min-w-[3.25rem] text-center transition-colors" title={t("setZoomTip")}>
+                  {Math.round(zoom * 100)}%
+                </button>
+              )}
               <button onClick={() => { const nz = Math.min(zoom * 1.3, 4); const vp = viewportRef.current; if (!vp) return; const cx = vp.clientWidth/2; const cy = vp.clientHeight/2; const cxc = (cx - panX) / zoom; const cyc = (cy - panY) / zoom; setPanX(cx - cxc*nz); setPanY(cy - cyc*nz); setZoom(nz); }}
                 className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors" title={t("zoomIn")}>
                 <ZoomIn size={21} />
