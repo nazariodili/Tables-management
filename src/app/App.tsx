@@ -1619,15 +1619,14 @@ export default function App() {
         <Modal title={t("addToList")} onClose={() => setAddPersonOpen(false)}>
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Full name</label>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("fullName")}</label>
               <input autoFocus value={pName} onChange={e => setPName(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addPerson()}
-                placeholder="e.g. John Smith"
                 className="mt-1.5 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Color</label>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t("color")}</label>
               <div className="mt-1.5 flex gap-2 flex-wrap">
                 {COLORS.map(c => (
                   <button key={c} onClick={() => setPColor(c)} title={t("pickColor")}
@@ -1635,9 +1634,6 @@ export default function App() {
                     style={{ backgroundColor: c }}
                   />
                 ))}
-              </div>
-              <div className="mt-3 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-900 text-center shadow-sm truncate" style={{ backgroundColor: pColor }}>
-                {pName || t("namePreview")}
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
